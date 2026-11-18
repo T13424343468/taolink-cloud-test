@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tao.tao.link.DefaultSessionCryptoTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-18T17:17:32.200Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-bdglhvl678" time="0.434">
+  <properties/>
+  <testcase name="decrypt_beforeDeriveKey_throws" classname="com.tao.tao.link.DefaultSessionCryptoTest" time="0.004"/>
+  <testcase name="decrypt_withDifferentCodeKey_fails" classname="com.tao.tao.link.DefaultSessionCryptoTest" time="0.247"/>
+  <testcase name="deriveKey_shorterThanSixDigits_rejected" classname="com.tao.tao.link.DefaultSessionCryptoTest" time="0.001"/>
+  <testcase name="encrypt_cipherDiffersFromPlain_andIvPrepended" classname="com.tao.tao.link.DefaultSessionCryptoTest" time="0.069"/>
+  <testcase name="deriveKeyThenEncryptDecrypt_roundtripIntact" classname="com.tao.tao.link.DefaultSessionCryptoTest" time="0.113"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

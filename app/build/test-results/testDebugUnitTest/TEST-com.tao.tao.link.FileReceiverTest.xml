@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tao.tao.link.FileReceiverTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-18T17:17:32.687Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-bdglhvl678" time="0.04">
+  <properties/>
+  <testcase name="verify_beforeComplete_rejected" classname="com.tao.tao.link.FileReceiverTest" time="0.014"/>
+  <testcase name="cancel_deletesTargetAndSidecar" classname="com.tao.tao.link.FileReceiverTest" time="0.001"/>
+  <testcase name="totalChunks_boundaries_exclusive" classname="com.tao.tao.link.FileReceiverTest" time="0.001"/>
+  <testcase name="resume_fromSidecar_missingOnlyLaterChunks" classname="com.tao.tao.link.FileReceiverTest" time="0.005"/>
+  <testcase name="verify_hashMismatch_wholeFileRejected" classname="com.tao.tao.link.FileReceiverTest" time="0.003"/>
+  <testcase name="writeChunk_duplicateChunk_idempotent" classname="com.tao.tao.link.FileReceiverTest" time="0.007"/>
+  <testcase name="writeChunk_outOfRange_rejected" classname="com.tao.tao.link.FileReceiverTest" time="0.001"/>
+  <testcase name="totalChunks_zeroSize_isOneChunk" classname="com.tao.tao.link.FileReceiverTest" time="0.001"/>
+  <testcase name="writeChunk_allChunks_thenVerify_passes" classname="com.tao.tao.link.FileReceiverTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

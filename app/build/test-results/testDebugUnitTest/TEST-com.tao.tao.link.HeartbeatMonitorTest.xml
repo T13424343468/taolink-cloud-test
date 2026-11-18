@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tao.tao.link.HeartbeatMonitorTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-18T17:17:32.754Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-bdglhvl678" time="0.015">
+  <properties/>
+  <testcase name="onPeerHeartbeat_resetsTimeoutAndExitsSelfHealing" classname="com.tao.tao.link.HeartbeatMonitorTest" time="0.007"/>
+  <testcase name="freshMonitor_notTimedOut" classname="com.tao.tao.link.HeartbeatMonitorTest" time="0.004"/>
+  <testcase name="beyondTimeoutLine_isTimedOut" classname="com.tao.tao.link.HeartbeatMonitorTest" time="0.0"/>
+  <testcase name="enterSelfHealing_idempotent" classname="com.tao.tao.link.HeartbeatMonitorTest" time="0.0"/>
+  <testcase name="withinTimeoutLine_notTimedOut" classname="com.tao.tao.link.HeartbeatMonitorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

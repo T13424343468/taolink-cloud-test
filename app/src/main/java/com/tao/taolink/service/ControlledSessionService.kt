@@ -49,6 +49,9 @@ class ControlledSessionService : Service() {
     @Volatile
     private var connectedPeerFingerprintHex: String? = null
 
+    /** 通话信令桥（被控端 WebRTC 引擎由宿主注入；语音引擎班 2026-11-19）。 */
+    var callSignalBridge: ((ByteArray) -> Unit)? = null
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -133,8 +136,11 @@ class ControlledSessionService : Service() {
                 val ok = ControlDispatcher.dispatch(frame.payload, controlExecutor)
                 connection.send(Frame(Route.CONTROL, FrameType.ACK, frame.seq, if (ok) ACK_OK else ACK_FAIL))
             }
+            FrameType.CALL_SIGNAL -> if (frame.route == Route.AUDIO) {
+                callSignalBridge?.invoke(frame.payload)
+            }
             else -> {
-                // 画面/文件/通话通道由对位垂直实现接手，本班不透传不明帧
+                // 画面/文件通道由对位垂直实现接手，本班不透传不明帧
             }
         }
     }

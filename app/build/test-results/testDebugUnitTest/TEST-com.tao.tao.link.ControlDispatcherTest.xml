@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tao.tao.link.ControlDispatcherTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-18T17:17:32.161Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-bdglhvl678" time="0.03">
+  <properties/>
+  <testcase name="dispatch_setTextPayload_routesToNodeText" classname="com.tao.tao.link.ControlDispatcherTest" time="0.019"/>
+  <testcase name="dispatch_keyPayload_routesToSendKey" classname="com.tao.tao.link.ControlDispatcherTest" time="0.0"/>
+  <testcase name="dispatch_gestureUnknownKind_fails" classname="com.tao.tao.link.ControlDispatcherTest" time="0.0"/>
+  <testcase name="dispatch_keyWrongPayloadLength_fails" classname="com.tao.tao.link.ControlDispatcherTest" time="0.0"/>
+  <testcase name="dispatch_emptyOrUnknownType_fails" classname="com.tao.tao.link.ControlDispatcherTest" time="0.0"/>
+  <testcase name="dispatch_gesturePayload_routesToDispatchGesture" classname="com.tao.tao.link.ControlDispatcherTest" time="0.008"/>
+  <testcase name="dispatch_setTextWithoutTabSeparator_fails" classname="com.tao.tao.link.ControlDispatcherTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

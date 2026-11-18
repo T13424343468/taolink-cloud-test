@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tao.tao.link.protocol.PairingCodeTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-18T17:17:32.945Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-bdglhvl678" time="0.007">
+  <properties/>
+  <testcase name="verify rejects wrong length non digits and mismatch" classname="com.tao.tao.link.protocol.PairingCodeTest" time="0.002"/>
+  <testcase name="verify accepts exact match" classname="com.tao.tao.link.protocol.PairingCodeTest" time="0.0"/>
+  <testcase name="generate always six digits" classname="com.tao.tao.link.protocol.PairingCodeTest" time="0.003"/>
+  <testcase name="verify keeps leading zeros" classname="com.tao.tao.link.protocol.PairingCodeTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

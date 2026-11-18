@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tao.tao.link.PairingResponderTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-18T17:17:32.852Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-bdglhvl678" time="0.032">
+  <properties/>
+  <testcase name="onSubmit_resubmission_replacesNotDuplicates" classname="com.tao.tao.link.PairingResponderTest" time="0.01"/>
+  <testcase name="onSubmit_correctCode_returnsOwnFingerprintAndPersistsPeer" classname="com.tao.tao.link.PairingResponderTest" time="0.004"/>
+  <testcase name="onSubmit_expiredCode_rejectedAndNoPeerRecord" classname="com.tao.tao.link.PairingResponderTest" time="0.004"/>
+  <testcase name="regenerateCode_oldCodeInvalidatedImmediately_withinTtl" classname="com.tao.tao.link.PairingResponderTest" time="0.005"/>
+  <testcase name="fingerprint_sameMaterialSameHex_differentMaterialDifferentHex" classname="com.tao.tao.link.PairingResponderTest" time="0.004"/>
+  <testcase name="displayCode_alwaysSixDigits" classname="com.tao.tao.link.PairingResponderTest" time="0.001"/>
+  <testcase name="onSubmit_wrongCode_rejectedAndNoRecord" classname="com.tao.tao.link.PairingResponderTest" time="0.002"/>
+  <testcase name="displayCode_expiresAndRefreshes" classname="com.tao.tao.link.PairingResponderTest" time="0.001"/>
+  <testcase name="regenerateCode_resetsTtlClock" classname="com.tao.tao.link.PairingResponderTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

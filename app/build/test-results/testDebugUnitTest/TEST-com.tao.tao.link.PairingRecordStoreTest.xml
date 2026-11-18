@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.tao.tao.link.PairingRecordStoreTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-11-18T17:17:32.787Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-bdglhvl678" time="0.059">
+  <properties/>
+  <testcase name="upsert_noTmpFileLeftBehind" classname="com.tao.tao.link.PairingRecordStoreTest" time="0.023"/>
+  <testcase name="load_malformedLines_skipped" classname="com.tao.tao.link.PairingRecordStoreTest" time="0.013"/>
+  <testcase name="load_missingFile_emptyList" classname="com.tao.tao.link.PairingRecordStoreTest" time="0.001"/>
+  <testcase name="contains_existingAndMissing" classname="com.tao.tao.link.PairingRecordStoreTest" time="0.002"/>
+  <testcase name="markConnected_pathRoundtrip_allThreeTypes" classname="com.tao.tao.link.PairingRecordStoreTest" time="0.003"/>
+  <testcase name="upsert_thenLoad_roundtripIntact" classname="com.tao.tao.link.PairingRecordStoreTest" time="0.005"/>
+  <testcase name="markConnected_unknownFingerprint_returnsFalseAndNoRecord" classname="com.tao.tao.link.PairingRecordStoreTest" time="0.0"/>
+  <testcase name="persistedLine_isFiveColumnsWithNoneTag" classname="com.tao.tao.link.PairingRecordStoreTest" time="0.001"/>
+  <testcase name="markConnected_updatesLastConnectedAndPath_singleRecord" classname="com.tao.tao.link.PairingRecordStoreTest" time="0.001"/>
+  <testcase name="load_legacyThreeColumnRecord_fallsBackPairedTimeAndNullPath" classname="com.tao.tao.link.PairingRecordStoreTest" time="0.004"/>
+  <testcase name="upsert_sameFingerprint_replacesSingle" classname="com.tao.tao.link.PairingRecordStoreTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

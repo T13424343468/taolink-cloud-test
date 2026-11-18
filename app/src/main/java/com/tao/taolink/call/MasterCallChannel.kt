@@ -3,37 +3,71 @@ package com.tao.tao.link.call
 import com.tao.tao.link.LinkLog
 
 /**
- * 主控端通话（契约 #10 CallChannel 主控侧实现，接口对齐班交付）。
- * WebRTC 集成待下期（老板拍板分岔 2 = A，技术路线-决策清单）；
- * 本班落接口位：连接态守门、通话状态记账、弱网降档只降视频不降音频（协议文档 §2-10）。
- * 搁置条件与负责人：媒体引擎接入由下期 WebRTC 集成班承接，接口零改动。
+ * 主控端通话（契约 #10 CallChannel 主控侧实现）。
+ * WebRTC 语音引擎已接入（老板拍板分岔 2 = A）：语音对讲走真实音频采集与渲染，信令经既有会话 AUDIO 路由帧。
+ * 连接态守门、通话状态记账、弱网降档只降视频不降音频（协议文档 §2-10）。
+ * 视频通话（VIDEO 路由 + 摄像头）留接口与降级位，媒体引擎随下期集成，CallChannel 接口零改动。
  */
-class MasterCallChannel(private val isSessionLive: () -> Boolean) : CallChannel {
+class MasterCallChannel(
+    private val isSessionLive: () -> Boolean,
+    private val sendSignal: ((ByteArray) -> Long)? = null,
+) : CallChannel {
 
     enum class CallState { IDLE, VOICE, VIDEO }
 
     var state: CallState = CallState.IDLE
-        private set
+        internal set
 
     var quality: CallChannel.Quality = CallChannel.Quality(VIDEO_FPS_BASE, AUDIO_KBPS_BASE)
         private set
 
     var degraded: Boolean = false
+        internal set
+
+    /** 视频引擎位（本期不实现，留降级位）。 */
+    var videoEngine: Any? = null
         private set
+
+    private var voiceEngine: WebRtcVoiceEngine? = null
 
     override fun startVoice() {
         if (!guard("startVoice")) return
+        val sink = sendSignal
+        if (sink == null) {
+            LinkLog.w(TAG, "startVoice 拒绝：未接会话信令出口")
+            return
+        }
+        val context = appContext
+        if (context == null) {
+            LinkLog.w(TAG, "startVoice 拒绝：未注入 Context")
+            return
+        }
         state = CallState.VOICE
-        LinkLog.d(TAG, "语音对讲接口位已记（WebRTC 集成待下期）")
+        voiceEngine = WebRtcVoiceEngine(
+            context = context,
+            isInitiator = true,
+            signalSink = { sink(it) },
+            onRemoteAudioReady = { LinkLog.d(TAG, "远端音频已就绪") },
+            onHangup = { end() },
+        )
+        voiceEngine?.start()
+        LinkLog.d(TAG, "语音对讲已发起（WebRTC）")
+    }
+
+    /** 对端信令入口：由会话层 AUDIO 路由帧转发。 */
+    fun onCallSignal(payload: ByteArray) {
+        voiceEngine?.onCallSignal(payload) ?: LinkLog.d(TAG, "无通话中，忽略信令帧")
     }
 
     override fun startVideo() {
         if (!guard("startVideo")) return
         state = CallState.VIDEO
-        LinkLog.d(TAG, "视频通话接口位已记（WebRTC 集成待下期）")
+        LinkLog.d(TAG, "视频通话接口位已记（VIDEO 引擎集成待下期）")
     }
 
     override fun end() {
+        voiceEngine?.end()
+        voiceEngine = null
         state = CallState.IDLE
         degraded = false
         quality = CallChannel.Quality(VIDEO_FPS_BASE, AUDIO_KBPS_BASE)
@@ -60,5 +94,9 @@ class MasterCallChannel(private val isSessionLive: () -> Boolean) : CallChannel 
         const val VIDEO_FPS_BASE = 24
         const val VIDEO_FPS_MIN = 8
         const val AUDIO_KBPS_BASE = 32
+
+        /** 引擎 Context 注入口（避免把 android Context 混进会话层）。 */
+        @Volatile
+        var appContext: android.content.Context? = null
     }
 }

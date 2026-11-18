@@ -50,6 +50,7 @@ class MasterSession(
     var onStateChanged: ((SessionState) -> Unit)? = null
     var onPeerStatus: ((StatusChannel.PeerStatus) -> Unit)? = null
     var onScreenFrame: ((ByteArray) -> Unit)? = null
+    var onCallSignal: ((ByteArray) -> Unit)? = null
     var onPairCompleted: ((DeviceFingerprint) -> Unit)? = null
     var onCommandGiveUp: ((seq: Long) -> Unit)? = null
 
@@ -162,7 +163,13 @@ class MasterSession(
         return seq
     }
 
-    /** 文件块发送（文件通道；续传账由发端文件层自持）。 */
+    /** 通话信令发送（语音引擎班 2026-11-19；走 AUDIO 路由帧）。 */
+    fun sendCallSignal(payload: ByteArray): Long {
+        val seq = seqCounter.incrementAndGet()
+        enqueueWire(wireBytes(Route.AUDIO, FrameType.CALL_SIGNAL, seq, payload))
+        return seq
+    }
+
     fun sendFileChunk(payload: ByteArray): Long {
         if (state != SessionState.CONNECTED && state != SessionState.CONTROLLING) return -1
         val seq = seqCounter.incrementAndGet()
@@ -285,6 +292,7 @@ class MasterSession(
             FrameType.CHUNK ->
                 when (frame.route) {
                     Route.SCREEN -> onScreenFrame?.invoke(frame.payload)
+                    Route.AUDIO -> if (frame.type == FrameType.CALL_SIGNAL) onCallSignal?.invoke(frame.payload)
                     else -> LinkLog.d(TAG, "帧暂未处理 route=${frame.route}")
                 }
             else -> LinkLog.d(TAG, "帧暂未处理 route=${frame.route} type=${frame.type}")
