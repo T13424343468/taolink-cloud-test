@@ -7,7 +7,7 @@ on:
 jobs:
   cloud-device-test:
     runs-on: ubuntu-24.04
-    timeout-minutes: 150
+    timeout-minutes: 200
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -206,6 +206,39 @@ jobs:
             grep -q FATAL crash-stack-controlled.txt && { echo "FAIL_CRASH_ON_CONTROLLED_ENTRY"; exit 1; } || echo "NOTE: code text not visible in dump (may be env), no fatal either"
           fi
 
+      - name: Stage 2c - prototype text conformance gate (prototype v2 frozen baseline)
+        run: |
+          check_text() {
+            FILE=$1; TEXT=$2
+            if grep -q "$TEXT" "$FILE" 2>/dev/null; then
+              echo "PASS_PROTO_TEXT:$TEXT"
+            else
+              echo "FAIL_PROTO_TEXT:$TEXT"; exit 1
+            fi
+          }
+          # 角色选择屏（原型②）：去帮忙 / 让人帮
+          check_text ui-pre-controlled.xml "去帮忙"
+          check_text ui-pre-controlled.xml "让人帮"
+          # 主控首页（原型④）：经界面点击进入，不依赖导出
+          tap_ui2() {
+            LINE=$(grep -o 'text="'"$2"'".*bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' "$1" 2>/dev/null | head -1)
+            NUMS=$(echo "$LINE" | grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | head -1 | tr -d '[]')
+            [ -n "$NUMS" ] || { echo "TAP_MISS_$2"; return; }
+            X1=$(echo "$NUMS" | cut -d, -f1); Y1=$(echo "$NUMS" | cut -d, -f2)
+            X2=$(echo "$NUMS" | cut -d, -f3); Y2=$(echo "$NUMS" | cut -d, -f4)
+            adb shell input tap $(( (X1+X2)/2 )) $(( (Y1+Y2)/2 ))
+          }
+          adb shell am start -n com.tao.tao.link/.ui.MainActivity >/dev/null 2>&1; sleep 5
+          tap_ui2 ui-pre-controlled.xml "去帮忙"
+          sleep 6
+          adb shell uiautomator dump /data/local/tmp/ui.xml >/dev/null 2>&1 && adb pull /data/local/tmp/ui.xml ui-masterhome.xml || echo "UI_DUMP_FAIL_MASTERHOME"
+          adb shell screencap -p /data/local/tmp/s.png && adb pull /data/local/tmp/s.png shot-masterhome.png || true
+          grep -o 'text="[^"]*"' ui-masterhome.xml 2>/dev/null | sort -u > texts-masterhome.txt || true
+          cat texts-masterhome.txt
+          check_text ui-masterhome.xml "连接一台设备"
+          check_text ui-masterhome.xml "输配对码连接"
+          echo "PASS_PROTOTYPE_TEXT_CONFORMANCE"
+
       - name: Stage 3 - pairing code validity scope note
         run: |
           echo "PAIRING_CODE_5MIN: protocol-layer logic covered by unit tests (82/82); cloud dual-device live probe limited by Stage 4"
@@ -215,9 +248,19 @@ jobs:
           if ls -l /dev/kvm 2>/dev/null; then echo "KVM_PRESENT"; else echo "TWO_DEVICE_LIMIT: no KVM on runner; single emulator only; second device cannot boot in parallel"; fi
           echo "TWO_DEVICE_RESULT: not feasible on this runner (single emulator, no nested virtualization)"
 
-      - name: Stage 5 - stability short-run + crash census
+      - name: Stage 5 - 30min long-run + periodic crash census
         run: |
-          sleep 120
+          ELAPSED=0
+          while [ $ELAPSED -lt 1800 ]; do
+            sleep 300; ELAPSED=$((ELAPSED+300))
+            if ! adb shell ps -A | grep tao.tao.link; then
+              echo "FAIL_LONGRUN_PROCESS_GONE_AT_${ELAPSED}s"; exit 1
+            fi
+            adb logcat -d > logcat-longrun-${ELAPSED}s.txt || true
+            CNT=$(grep -c "FATAL EXCEPTION" logcat-longrun-${ELAPSED}s.txt || true)
+            [ "${CNT:-0}" -gt 0 ] && { echo "FAIL_LONGRUN_CRASH_AT_${ELAPSED}s"; exit 1; }
+            echo "LONGRUN_OK_AT_${ELAPSED}s"
+          done
           adb shell ps -A | grep tao.tao.link || echo "PROCESS_GONE"
           adb shell screencap -p /data/local/tmp/s.png && adb pull /data/local/tmp/s.png shot-5min.png || true
           adb logcat -d > logcat-final.txt || true
@@ -225,6 +268,40 @@ jobs:
           cat crash-count.txt
           adb shell dumpsys dropbox --print 2>/dev/null | grep -E "^Process: com.tao" > dropbox.txt || echo "no taolink dropbox entries" > dropbox.txt
           cat dropbox.txt
+
+      - name: Stage 6 - adversarial input robustness probe
+        run: |
+          adb shell input keyevent 4; sleep 2
+          adb shell am start -n com.tao.tao.link/.ui.MainActivity >/dev/null 2>&1; sleep 5
+          adb shell uiautomator dump /data/local/tmp/ui.xml >/dev/null 2>&1 && adb pull /data/local/tmp/ui.xml ui-adversarial-0.xml || true
+          tap_ui3() {
+            LINE=$(grep -o 'text="'"$2"'".*bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' "$1" 2>/dev/null | head -1)
+            NUMS=$(echo "$LINE" | grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | head -1 | tr -d '[]')
+            [ -n "$NUMS" ] || { echo "TAP_MISS_$2"; return; }
+            X1=$(echo "$NUMS" | cut -d, -f1); Y1=$(echo "$NUMS" | cut -d, -f2)
+            X2=$(echo "$NUMS" | cut -d, -f3); Y2=$(echo "$NUMS" | cut -d, -f4)
+            adb shell input tap $(( (X1+X2)/2 )) $(( (Y1+Y2)/2 ))
+          }
+          tap_ui3 ui-adversarial-0.xml "去帮忙"
+          sleep 5
+          tap_ui3 ui-adversarial-0.xml "输配对码连接"
+          sleep 5
+          adb shell uiautomator dump /data/local/tmp/ui.xml >/dev/null 2>&1 && adb pull /data/local/tmp/ui.xml ui-adversarial.xml || true
+          grep -q "输配对码" ui-adversarial.xml 2>/dev/null && ON_INPUT_SCREEN=1 || ON_INPUT_SCREEN=0
+          echo "ON_INPUT_SCREEN=$ON_INPUT_SCREEN"
+          adb shell input text "$(python3 -c "print('A'*800)")" || echo "LONG_INPUT_REJECTED"
+          adb shell input text "abc'"'"';%sDROP%sTABLE%s--" || true
+          adb shell input text "<script>alert(1)</script>" || true
+          adb shell input text "＃＄％＆＇（）＊＋～" || true
+          for i in 1 2 3 4 5 6 7 8 9 10; do adb shell input tap 540 1200 || true; done
+          sleep 8
+          adb shell ps -A | grep tao.tao.link || { echo "FAIL_ADVERSARIAL_PROCESS_GONE"; exit 1; }
+          adb logcat -d > logcat-adversarial.txt || true
+          CNT=$(grep -c "FATAL EXCEPTION" logcat-adversarial.txt || true)
+          echo "adversarial_fatal_count=${CNT:-0}"
+          [ "${CNT:-0}" -gt 0 ] && { echo "FAIL_ADVERSARIAL_CRASH"; exit 1; }
+          adb shell screencap -p /data/local/tmp/s.png && adb pull /data/local/tmp/s.png shot-adversarial.png || true
+          echo "PASS_ADVERSARIAL_INPUT"
 
       - name: Summarize verdict
         if: always()
@@ -256,6 +333,22 @@ jobs:
             controlled-top.txt
             emulator.log
           if-no-files-found: warn
+
+      - name: Push evidence to cloud-evidence branch
+        if: always()
+        run: |
+          RID=${{ github.run_id }}
+          mkdir -p runs/$RID
+          for f in shot-*.png ui-*.xml texts-*.txt verdict-summary.txt crash*.txt logcat-*.txt dropbox.txt overlap-check.txt controlled-top.txt; do
+            [ -e "$f" ] && cp "$f" runs/$RID/ || true
+          done
+          ls -la runs/$RID | head -20
+          git config user.name "taolink-ci"
+          git config user.email "ci@taolink.local"
+          git checkout -B cloud-evidence 2>/dev/null || git checkout cloud-evidence
+          git add runs/$RID || true
+          git commit -m "cloud evidence run $RID" || echo "NO_EVIDENCE_CHANGES"
+          git push origin cloud-evidence && echo "EVIDENCE_PUSHED" || echo "EVIDENCE_PUSH_FAILED"
 
       - name: Kill emulator + dump log
         if: always()
