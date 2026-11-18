@@ -82,7 +82,7 @@ jobs:
           adb shell monkey -p com.tao.tao.link -c android.intent.category.LAUNCHER 1
           sleep 25
           adb shell "dumpsys activity activities | grep -i tao.tao.link | head -5" || echo "ACTIVITY_NOT_TOP"
-          adb shell screencap -p /sdcard/s.png && adb pull /sdcard/s.png shot-01-cold-start.png
+          adb shell screencap -p /data/local/tmp/s.png && adb pull /data/local/tmp/s.png shot-01-cold-start.png
           adb shell pm grant com.tao.tao.link android.permission.POST_NOTIFICATIONS 2>/dev/null || true
           adb shell pm grant com.tao.tao.link android.permission.CAMERA 2>/dev/null || true
           adb shell pm grant com.tao.tao.link android.permission.RECORD_AUDIO 2>/dev/null || true
@@ -90,13 +90,13 @@ jobs:
           adb shell settings put secure enabled_accessibility_services com.tao.tao.link/com.tao.tao.link.accessibility.TaoLinkAccessibilityService 2>/dev/null || echo "A11Y_GRANT_UNAVAILABLE"
           adb shell settings put secure accessibility_enabled 1 2>/dev/null || true
           adb shell settings get secure enabled_accessibility_services || true
-          adb shell screencap -p /sdcard/s.png && adb pull /sdcard/s.png shot-02-after-a11y.png
+          adb shell screencap -p /data/local/tmp/s.png && adb pull /data/local/tmp/s.png shot-02-after-a11y.png
 
       - name: Stage 2 - UI walkthrough of 5 screens
         run: |
           dump_ui() {
-            adb shell uiautomator dump /sdcard/ui.xml > /dev/null 2>&1 && adb pull /sdcard/ui.xml "ui-$1.xml" || echo "DUMP_FAIL_$1"
-            adb shell screencap -p /sdcard/s.png && adb pull /sdcard/s.png "shot-$1.png" || true
+            adb shell uiautomator dump /data/local/tmp/ui.xml > /dev/null 2>&1 && adb pull /data/local/tmp/ui.xml "ui-$1.xml" || echo "DUMP_FAIL_$1"
+            adb shell screencap -p /data/local/tmp/s.png && adb pull /data/local/tmp/s.png "shot-$1.png" || true
           }
           tap_text() {
             XML="$1"; KEY="$2"
@@ -123,7 +123,7 @@ jobs:
           tap_text ui-home.xml "输配对码连接"
           sleep 6; dump_ui pair-input
           grep -o 'text="[^"]*"' ui-pair-input.xml 2>/dev/null | sort -u | head -20 > texts-pair.txt || true
-          adb shell screencap -p /sdcard/s.png && adb pull /sdcard/s.png shot-pair-short.png || true
+          adb shell screencap -p /data/local/tmp/s.png && adb pull /data/local/tmp/s.png shot-pair-short.png || true
           adb shell input keyevent 4; sleep 2
           dump_ui home-final
 
@@ -144,7 +144,7 @@ jobs:
           adb shell "dumpsys activity activities | grep -i tao.tao.link | head -5" > proc-5min.txt || true
           adb shell "dumpsys dropbox --print" > dropbox.txt 2>/dev/null || echo NO_DROPBOX
           grep -c "com.tao.tao.link" dropbox.txt > dropbox-count.txt || true
-          adb shell screencap -p /sdcard/s.png && adb pull /sdcard/s.png shot-5min.png
+          adb shell screencap -p /data/local/tmp/s.png && adb pull /data/local/tmp/s.png shot-5min.png
           adb logcat -d > logcat-final.txt || true
           grep -cE "FATAL EXCEPTION|ANR in com.tao.tao.link" logcat-final.txt > crash-count.txt || true
           echo "crash_count=$(cat crash-count.txt)"
