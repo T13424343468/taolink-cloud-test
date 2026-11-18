@@ -76,7 +76,7 @@ jobs:
 
       - name: Stage 1 - install + cold start + auth flow
         run: |
-          adb install -r taolink-0.2.3.apk
+          APK=$(ls taolink-*.apk | head -1); echo "installing $APK"; adb install -r "$APK"
           adb shell pm list packages | grep com.tao.tao.link || { echo FAIL_PACKAGE_NOT_FOUND; exit 1; }
           adb logcat -c
           adb shell monkey -p com.tao.tao.link -c android.intent.category.LAUNCHER 1
@@ -126,6 +126,37 @@ jobs:
           adb shell screencap -p /data/local/tmp/s.png && adb pull /data/local/tmp/s.png shot-pair-short.png || true
           adb shell input keyevent 4; sleep 2
           dump_ui home-final
+
+      - name: Stage 2b - controlled-entry crash probe (user-reported red)
+        run: |
+          adb shell input keyevent 4; sleep 2
+          adb shell am start -n com.tao.tao.link/.ui.MainActivity >/dev/null 2>&1; sleep 5
+          adb shell uiautomator dump /data/local/tmp/ui.xml > /dev/null 2>&1 && adb pull /data/local/tmp/ui.xml ui-pre-controlled.xml || true
+          grep -o 'text="[^"]*"' ui-pre-controlled.xml 2>/dev/null | sort -u | head -20 || true
+          adb logcat -c
+          tap_ui() {
+            LINE=$(grep -o 'text="'"$2"'".*bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' "$1" 2>/dev/null | head -1)
+            NUMS=$(echo "$LINE" | grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | head -1 | tr -d '[]')
+            [ -n "$NUMS" ] || { echo "TAP_MISS_$2"; return; }
+            X1=$(echo "$NUMS" | cut -d, -f1); Y1=$(echo "$NUMS" | cut -d, -f2)
+            X2=$(echo "$NUMS" | cut -d, -f3); Y2=$(echo "$NUMS" | cut -d, -f4)
+            adb shell input tap $(( (X1+X2)/2 )) $(( (Y1+Y2)/2 ))
+          }
+          tap_ui ui-pre-controlled.xml "让人帮"
+          sleep 6
+          adb shell "dumpsys activity activities | grep -i tao.tao.link | head -5" > controlled-top.txt || true
+          cat controlled-top.txt
+          adb shell uiautomator dump /data/local/tmp/ui.xml > /dev/null 2>&1 && adb pull /data/local/tmp/ui.xml ui-controlled.xml || echo "UI_DUMP_FAIL_CRASH_SUSPECT"
+          adb shell screencap -p /data/local/tmp/s.png && adb pull /data/local/tmp/s.png shot-controlled-entry.png || true
+          adb logcat -d > logcat-controlled-probe.txt || true
+          grep -A 30 -E "FATAL EXCEPTION|AndroidRuntime.*Process.*tao.tao.link.*died|AndroidRuntime: java" logcat-controlled-probe.txt > crash-stack-controlled.txt || echo NO_FATAL
+          head -40 crash-stack-controlled.txt
+          # 状态栏重叠视觉核：根内容首控件 y 坐标须低于状态栏高度
+          STATUSBAR=48
+          TOP_Y=$(grep -oE 'bounds="\[[0-9]+,([0-9]+)\]' ui-controlled.xml 2>/dev/null | head -3 | grep -oE '[0-9]+$' | head -1 || echo 999)
+          echo "controlled_top_y=${TOP_Y} statusbar=${STATUSBAR}" | tee overlap-check.txt
+          grep -c "FATAL EXCEPTION" logcat-controlled-probe.txt > crash-count-controlled.txt || echo 0 > crash-count-controlled.txt
+          cat crash-count-controlled.txt
 
       - name: Stage 3 - pairing code validity scope note
         run: |
