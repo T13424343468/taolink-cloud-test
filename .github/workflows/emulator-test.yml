@@ -26,17 +26,18 @@ jobs:
 
       - name: Create AVD
         run: |
-          echo no | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n test -k "system-images;android-34;google_apis;x86_64" -d pixel_5
+          echo no | $ANDROID_HOME/cmdline-tools/latest/bin/avdmanager create avd -n tlavd -k "system-images;android-34;google_apis;x86_64"
 
       - name: Boot emulator
         run: |
-          $ANDROID_HOME/emulator/emulator -avd test -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 3072 -no-snapshot &
+          $ANDROID_HOME/emulator/emulator -avd tlavd -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -memory 3072 -no-snapshot &
           for i in $(seq 1 90); do
             BOOT=$($ANDROID_HOME/platform-tools/adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
             [ "$BOOT" = "1" ] && break
             sleep 5
           done
           sleep 30
+          $ANDROID_HOME/platform-tools/adb devices | grep -q "emulator" || { echo "FAIL_NO_DEVICE_AFTER_BOOT"; exit 1; }
 
       - name: Stabilize system UI (env-disease fix)
         run: |
