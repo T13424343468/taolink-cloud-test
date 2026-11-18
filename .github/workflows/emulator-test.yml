@@ -16,6 +16,16 @@ jobs:
         run: |
           uname -a; nproc; free -h; ls -l /dev/kvm || echo "NO_KVM_DEVICE"
 
+      - name: Enable KVM (root fix for run4 TCG no-accel guest ANR)
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm
+            ls -l /dev/kvm
+            echo "KVM_ENABLED"
+          else
+            echo "FAIL_NO_KVM_DEVICE"; exit 1
+          fi
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -57,10 +67,11 @@ jobs:
         run: |
           export ANDROID_AVD_HOME=$HOME/.android/avd
           export ANDROID_USER_HOME=$HOME/.android
-          $ANDROID_HOME/emulator/emulator @tlavd -no-window -no-audio -no-boot-anim -no-snapshot -no-accel -gpu swiftshader_indirect -memory 3072 > emulator.log 2>&1 &
+          $ANDROID_HOME/emulator/emulator @tlavd -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect -memory 3072 > emulator.log 2>&1 &
           sleep 40
           pgrep -f "emulator" > /dev/null || { echo EMULATOR_DIED; tail -80 emulator.log; exit 1; }
           grep -i "Unknown AVD name" emulator.log && { echo FAIL_UNKNOWN_AVD; tail -80 emulator.log; exit 1; } || true
+          grep -qi "doesn't have permissions to use KVM" emulator.log && { echo FAIL_KVM_PERMISSION; tail -80 emulator.log; exit 1; } || true
 
       - name: Wait for boot
         run: |
@@ -85,7 +96,7 @@ jobs:
             $ADB shell settings put global $s 0 || true
           done
           $ADB shell settings put secure screen_off_timeout 0 || true
-          for i in $(seq 1 10); do
+          for i in $(seq 1 20); do
             $ADB shell uiautomator dump /data/local/tmp/x.xml > /dev/null 2>&1 || { sleep 15; continue; }
             $ADB pull /data/local/tmp/x.xml x.xml > /dev/null 2>&1 || { sleep 15; continue; }
             if grep -q "isn't responding" x.xml 2>/dev/null; then
@@ -101,6 +112,12 @@ jobs:
               echo "system UI clean at round $i"; break
             fi
           done
+          # CLEAN-SCREEN HARD GATE: proceed only when no system ANR dialog covers the app
+          $ADB shell uiautomator dump /data/local/tmp/x.xml > /dev/null 2>&1 && $ADB pull /data/local/tmp/x.xml x-final.xml > /dev/null 2>&1
+          if grep -q "isn't responding" x-final.xml 2>/dev/null; then
+            echo "FAIL_ENV_ANR_PERSISTENT"; exit 1
+          fi
+          test -s x-final.xml || { echo "FAIL_UI_DUMP_EMPTY_STABILIZE"; exit 1; }
           $ADB shell screencap -p /data/local/tmp/s.png && $ADB pull /data/local/tmp/s.png shot-00-stabilized.png || true
 
       - name: Stage 1 - install + cold start + auth flow
@@ -132,13 +149,22 @@ jobs:
             sleep 15
             adb shell uiautomator dump /data/local/tmp/ui.xml >/dev/null 2>&1 && adb pull /data/local/tmp/ui.xml ui-home.xml || echo "UI_DUMP_FAIL_2"
           fi
+          # HARD GATE: ANR dialog still covering after cleanup => env disease, fail loudly
+          if grep -q "isn't responding" ui-home.xml 2>/dev/null; then
+            echo "FAIL_ENV_ANR_COVERED"; exit 1
+          fi
+          test -s ui-home.xml || { echo "FAIL_UI_DUMP_EMPTY_HOME"; exit 1; }
           grep -o 'text="[^"]*"' ui-home.xml 2>/dev/null | sort -u > texts-home.txt || true
           cat texts-home.txt
           adb shell screencap -p /data/local/tmp/s.png && adb pull /data/local/tmp/s.png shot-home.png || true
           STATUSBAR=48
-          TOP_Y=$(grep -oE 'bounds="\[[0-9]+,([0-9]+)\]' ui-home.xml 2>/dev/null | grep -oE '[0-9]+$' | sort -n | head -1 || echo 999)
+          # v5 fix: top y of topmost TEXT node (run4 pattern '[0-9]+$' never matched the trailing ']', gate was dead)
+          TOP_Y=$(grep -oE 'text="[^"]+"[^>]*bounds="\[[0-9]+,[0-9]+\]' ui-home.xml 2>/dev/null | grep -oE 'bounds="\[[0-9]+,[0-9]+\]' | sed -E 's/.*,\[?([0-9]+)\]?/\1/' | sort -n | head -1)
           echo "home_top_y=${TOP_Y} statusbar=${STATUSBAR}" | tee overlap-check.txt
-          if [ -n "$TOP_Y" ] && [ "$TOP_Y" != "999" ] && [ "$TOP_Y" -lt "$STATUSBAR" ]; then
+          if [ -z "$TOP_Y" ]; then
+            echo "FAIL_UI_NO_TEXT_NODES"; exit 1
+          fi
+          if [ "$TOP_Y" -lt "$STATUSBAR" ]; then
             echo "FAIL_STATUSBAR_OVERLAP"; exit 1
           fi
           echo "PASS_STATUSBAR"
@@ -158,7 +184,13 @@ jobs:
             X2=$(echo "$NUMS" | cut -d, -f3); Y2=$(echo "$NUMS" | cut -d, -f4)
             adb shell input tap $(( (X1+X2)/2 )) $(( (Y1+Y2)/2 ))
           }
-          tap_ui ui-pre-controlled.xml "让人帮"
+          TAP_OUT=$(tap_ui ui-pre-controlled.xml "让人帮"); echo "$TAP_OUT"
+          if echo "$TAP_OUT" | grep -q TAP_MISS; then
+            if grep -q "isn't responding" ui-pre-controlled.xml 2>/dev/null; then
+              echo "FAIL_ENV_ANR_COVERED_2B"; exit 1
+            fi
+            echo "FAIL_TAP_MISS_CLEAN_SCREEN"; exit 1
+          fi
           sleep 8
           adb shell "dumpsys activity activities | grep -i tao.tao.link | head -5" > controlled-top.txt || true
           cat controlled-top.txt
@@ -198,10 +230,12 @@ jobs:
         if: always()
         run: |
           {
-            echo "== TaoLink 0.2.4 云测红绿清点 =="
+            echo "== TaoLink 0.2.4 云测红绿清点 (v5) =="
             ls -1 shot-*.png ui-*.xml texts-*.txt 2>/dev/null
             echo "crash_count=$(cat crash-count.txt 2>/dev/null || echo NA)"
             echo "overlap: $(cat overlap-check.txt 2>/dev/null || echo NA)"
+            ANR_HITS=$(grep -l "isn't responding" ui-*.xml 2>/dev/null | wc -l)
+            echo "anr_covered_dumps=${ANR_HITS}"
           } > verdict-summary.txt
           cat verdict-summary.txt
 
