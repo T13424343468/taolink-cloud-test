@@ -1,0 +1,1 @@
+home_top_y=276 statusbar=48

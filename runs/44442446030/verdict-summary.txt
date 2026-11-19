@@ -1,0 +1,17 @@
+== TaoLink 0.2.4 云测红绿清点 (v5) ==
+shot-00-stabilized.png
+shot-01-cold-start.png
+shot-02-after-a11y.png
+shot-controlled-entry.png
+shot-home.png
+shot-masterhome.png
+texts-home.txt
+texts-masterhome.txt
+ui-controlled.xml
+ui-controlled2.xml
+ui-home.xml
+ui-masterhome.xml
+ui-pre-controlled.xml
+crash_count=NA
+overlap: home_top_y=276 statusbar=48
+anr_covered_dumps=0

@@ -1,0 +1,5 @@
+    mResumedActivity: ActivityRecord{16c4802 u0 com.tao.tao.link/.ui.MainActivity t13}
+    mLastPausedActivity: ActivityRecord{3e2dd26 u0 com.tao.tao.link/.ui.MainActivity t13}
+    * Task{afbd3f1 #13 type=standard A=10145:com.tao.tao.link U=0 visible=true mode=fullscreen translucent=false sz=2}
+      affinity=10145:com.tao.tao.link
+      intent={act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] flg=0x10200000 cmp=com.tao.tao.link/.ui.MainActivity}
