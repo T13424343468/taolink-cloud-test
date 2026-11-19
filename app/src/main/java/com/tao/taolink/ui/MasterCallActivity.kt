@@ -79,7 +79,11 @@ class MasterCallActivity : AppCompatActivity() {
         when (autoCall) {
             "voice" -> ch.startVoice()
             "video" -> ch.startVideo()
-            "hangup" -> { ch.end(); finish() }
+            // 挂断路由到活信道：重建实例的空信道 end() 出不了挂断帧，对端占线假死（第七处跨端契约病）
+            "hangup" -> {
+                if (ch.state != MasterCallChannel.CallState.IDLE) ch.end() else MasterCallChannel.endLiveCall()
+                finish()
+            }
         }
     }
 

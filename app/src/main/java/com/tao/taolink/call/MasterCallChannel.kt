@@ -47,6 +47,7 @@ class MasterCallChannel(
             return
         }
         state = CallState.VOICE
+        liveCall = this // 通话落账即挂注册口：挂断路由找活信道，不找重建页的空信道
         voiceEngine = WebRtcVoiceEngine(
             context = context,
             isInitiator = true,
@@ -83,6 +84,7 @@ class MasterCallChannel(
             return
         }
         state = CallState.VIDEO
+        liveCall = this // 同语音：通话落账即挂注册口
         // 引擎回调里要交付渲染上下文，但本地值未初始化前不可自引：经空安全引用落地（回调在 start 后才触发）
         var engineRef: WebRtcVideoCallEngine? = null
         val engine = WebRtcVideoCallEngine(
@@ -107,6 +109,7 @@ class MasterCallChannel(
 
     override fun end() {
         val ended = onCallEnded
+        if (liveCall === this) liveCall = null // 结算先摘注册口，防挂完后路由到死信道
         // 挂断必须出网告知对端：只拆自己会让对端引擎永不知情、占线假死（第六处跨端契约病）
         if (voiceEngine != null || videoEngineRef != null) {
             try { sendSignal?.invoke(CallSignalCodec.encodeHangup()) } catch (_: Exception) {}
@@ -146,6 +149,20 @@ class MasterCallChannel(
         const val VIDEO_FPS_BASE = 24
         const val VIDEO_FPS_MIN = 8
         const val AUDIO_KBPS_BASE = 32
+
+        /**
+         * 活着的通话信道（第七处跨端契约病：挂断只认自家 Activity 实例的信道）——
+         * 通话页 standard 启动被重建（旋转/云测 am start 直启）后，新实例信道是空的，
+         * 对它 end() 不发挂断帧，对端通话占线假死、引擎永不释放。通话落账即挂注册口，
+         * 挂断路由一律打活信道；end() 结算先摘口。
+         */
+        @Volatile
+        internal var liveCall: MasterCallChannel? = null
+
+        /** 挂断路由入口：挂活着的通话；无通话在账则静默（与 idle 端语义一致）。 */
+        fun endLiveCall() {
+            liveCall?.end()
+        }
 
         /** 引擎 Context 注入口（避免把 android Context 混进会话层）。 */
         @Volatile
