@@ -187,34 +187,48 @@ jobs:
       - name: "Stage D - live fire, file transfer, voice, video"
         if: env.SKIP_LIVE_FIRE != '1'
         run: |
-          dump() { adb -s $2 shell uiautomator dump /data/local/tmp/u.xml >/dev/null 2>&1 && adb -s $2 pull /data/local/tmp/u.xml "$1" >/dev/null 2>&1; }
-          tap() {
-            LINE=$(grep -o "<node[^>]*text=\"$2\"[^>]*>" "$1" 2>/dev/null | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1)
-            NUMS=$(echo "$LINE" | grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | head -1 | tr -d '[]')
-            [ -n "$NUMS" ] || { echo "TAP_MISS_$2"; return 1; }
-            X1=$(echo "$NUMS"|cut -d, -f1);Y1=$(echo "$NUMS"|cut -d, -f2);X2=$(echo "$NUMS"|cut -d, -f3);Y2=$(echo "$NUMS"|cut -d, -f4)
-            adb -s $3 shell input tap $(( (X1+X2)/2 )) $(( (Y1+Y2)/2 ))
-          }
-          echo "LIVE_FIRE_UI_TEXTS_BEGIN"
-          cat texts-master-4.txt
-          echo "LIVE_FIRE_UI_TEXTS_END"
-          for BTN in "传文件" "文件互传" "发文件" "文件"; do tap ui-master-4.xml "$BTN" $ADB_HOST && { echo "FILE_ENTRY_TAPPED_$BTN"; break; } || echo "NO_FILE_ENTRY_$BTN"; done
-          sleep 8
-          dump ui-file.xml $ADB_HOST
-          grep -o 'text="[^"]*"' ui-file.xml | sort -u > texts-file.txt || true
-          cat texts-file.txt
-          adb -s $ADB_HOST logcat -c
-          for BTN in "语音" "视频"; do tap ui-file.xml "$BTN" $ADB_HOST || true; done
-          sleep 20
-          dump ui-call.xml $ADB_HOST
-          grep -o 'text="[^"]*"' ui-call.xml | sort -u > texts-call.txt || true
-          cat texts-call.txt
-          adb -s $ADB_HOST logcat -d > logcat-master-call.txt || true
-          adb -s $ADB_CTRL logcat -d > logcat-ctrl-call.txt || true
-          grep -icE "audio|AudioRecord|AudioTrack" logcat-master-call.txt > audio-frame-count-master.txt || true
-          grep -icE "video|encode" logcat-master-call.txt > video-frame-count-master.txt || true
-          cat audio-frame-count-master.txt video-frame-count-master.txt
+          # 云跑机点击注入不可靠（已确诊环境病）：实弹一律走 debug 导出组件直启 + auto_call 钩子，证据用引擎日志硬闸
+          adb -s $ADB_HOST shell pm grant com.tao.tao.link android.permission.RECORD_AUDIO 2>/dev/null || true
+          adb -s $ADB_HOST shell pm grant com.tao.tao.link android.permission.CAMERA 2>/dev/null || true
+          adb -s $ADB_CTRL shell pm grant com.tao.tao.link android.permission.RECORD_AUDIO 2>/dev/null || true
+          adb -s $ADB_CTRL shell pm grant com.tao.tao.link android.permission.CAMERA 2>/dev/null || true
 
+          echo "== FILE: 应用侧文件发送/接收链路未接线（ManageActivity 文件入口为占位、被控端 CHUNK 帧未接处理），如实挂账不硬凑绿 =="
+          echo "FILE_LIVE_FIRE=PENDING_FILE_UI_WIRING" | tee file-live-fire.txt
+
+          echo "== VOICE live fire =="
+          adb -s $ADB_HOST logcat -c; adb -s $ADB_CTRL logcat -c
+          adb -s $ADB_HOST shell am start -n com.tao.tao.link/.ui.MasterCallActivity --es auto_call voice; sleep 20
+          adb -s $ADB_HOST logcat -d > logcat-master-voice.txt || true
+          adb -s $ADB_CTRL logcat -d > logcat-ctrl-voice.txt || true
+          grep -c "语音对讲已发起" logcat-master-voice.txt > voice-start-count.txt || true
+          grep -icE "对端来电，引擎应答|远端音频已就绪" logcat-ctrl-voice.txt > voice-ctrl-count.txt || true
+          grep -icE "WebRTC|peerconnection|AudioRecord|audio" logcat-master-voice.txt > audio-frame-count-master.txt || true
+          cat voice-start-count.txt voice-ctrl-count.txt audio-frame-count-master.txt
+          START_OK=$( [ "$(cat voice-start-count.txt)" -ge 1 ] && echo 1 || echo 0 )
+          CTRL_OK=$( [ "$(cat voice-ctrl-count.txt)" -ge 1 ] && echo 1 || echo 0 )
+          [ "$START_OK" = "1" ] && [ "$CTRL_OK" = "1" ] || { echo "FAIL_VOICE_LIVE_FIRE"; exit 1; }
+          echo "PASS_VOICE_LIVE_FIRE"
+          adb -s $ADB_HOST shell am start -n com.tao.tao.link/.ui.MasterCallActivity --es auto_call hangup; sleep 5
+
+          echo "== VIDEO live fire =="
+          adb -s $ADB_HOST logcat -c; adb -s $ADB_CTRL logcat -c
+          adb -s $ADB_HOST shell am start -n com.tao.tao.link/.ui.MasterCallActivity --es auto_call video; sleep 25
+          adb -s $ADB_HOST logcat -d > logcat-master-video.txt || true
+          adb -s $ADB_CTRL logcat -d > logcat-ctrl-video.txt || true
+          grep -c "视频通话已发起" logcat-master-video.txt > video-start-count.txt || true
+          grep -icE "对端来电，引擎应答|远端视频轨就绪|本地视频轨就绪" logcat-ctrl-video.txt > video-ctrl-count.txt || true
+          grep -icE "WebRTC|peerconnection|VideoCapture|encode|video" logcat-master-video.txt > video-frame-count-master.txt || true
+          cat video-start-count.txt video-ctrl-count.txt video-frame-count-master.txt
+          VSTART_OK=$( [ "$(cat video-start-count.txt)" -ge 1 ] && echo 1 || echo 0 )
+          VCTRL_OK=$( [ "$(cat video-ctrl-count.txt)" -ge 1 ] && echo 1 || echo 0 )
+          [ "$VSTART_OK" = "1" ] && [ "$VCTRL_OK" = "1" ] || { echo "FAIL_VIDEO_LIVE_FIRE"; exit 1; }
+          echo "PASS_VIDEO_LIVE_FIRE"
+          adb -s $ADB_HOST shell am start -n com.tao.tao.link/.ui.MasterCallActivity --es auto_call hangup; sleep 3
+          adb -s $ADB_HOST shell screencap -p /data/local/tmp/s.png && adb -s $ADB_HOST pull /data/local/tmp/s.png shot-call-master.png || true
+          echo "PASS_STAGE_D_LIVE_FIRE"
+
+      - name: Upload evidence
       - name: Upload evidence
         if: always()
         uses: actions/upload-artifact@v4

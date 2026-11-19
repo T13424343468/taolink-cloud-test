@@ -33,6 +33,9 @@ class MasterCallActivity : AppCompatActivity() {
     private var remoteInit = false
     private var localInit = false
 
+    /** 云测直启钩子（debug 实弹用）：extra auto_call = voice / video / hangup；无 extra 时产品行为不变。 */
+    private val autoCall: String? by lazy { intent?.getStringExtra(EXTRA_AUTO_CALL) }
+
     private val remoteRenderer: SurfaceViewRenderer by lazy { findViewById(R.id.call_remote_view) }
     private val localRenderer: SurfaceViewRenderer by lazy { findViewById(R.id.call_local_view) }
     private val statusView: TextView by lazy { findViewById(R.id.call_status) }
@@ -72,6 +75,12 @@ class MasterCallActivity : AppCompatActivity() {
         }
         channel = ch
         session.onCallSignal = ch::onCallSignal
+        // 云测直启：会话接线完成后按 extra 执行动作（onResume 可能多次进入，动作随信道重建重放一次即可）
+        when (autoCall) {
+            "voice" -> ch.startVoice()
+            "video" -> ch.startVideo()
+            "hangup" -> { ch.end(); finish() }
+        }
     }
 
     override fun onDestroy() {
@@ -129,6 +138,9 @@ class MasterCallActivity : AppCompatActivity() {
     }
 
     private companion object {
+        /** 云测直启参数名（pipeline 用 adb shell am start 传入）。 */
+        const val EXTRA_AUTO_CALL = "auto_call"
+
         const val REQUEST_CALL_PERMISSIONS = 1001
         val PERMISSIONS = arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
     }
