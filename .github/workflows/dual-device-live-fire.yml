@@ -229,7 +229,6 @@ jobs:
           echo "PASS_STAGE_D_LIVE_FIRE"
 
       - name: Upload evidence
-      - name: Upload evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
