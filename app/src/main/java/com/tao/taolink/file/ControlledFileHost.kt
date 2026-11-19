@@ -31,6 +31,12 @@ class ControlledFileHost(private val inboxDir: File) {
         }
         if (meta.name in completed) return receipt(meta.name, complete = true, missing = emptyList())
         receivers.remove(meta.name)?.cancel()
+        // 首次建档即确保收件目录存在（run 44521321264 实锤：真机 filesDir 下无 inbox 目录，
+        // 建档 ENOENT 失败、后续块全部"未收到元数据"丢弃——单测 mkdirs 掩盖了此路径）
+        if (!inboxDir.isDirectory && !inboxDir.mkdirs()) {
+            LinkLog.w(TAG, "收件目录创建失败：${inboxDir.absolutePath}")
+            return null
+        }
         val receiver = try {
             FileReceiver(
                 targetFile = File(inboxDir, meta.name),

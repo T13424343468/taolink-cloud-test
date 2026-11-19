@@ -86,6 +86,28 @@ class ControlledFileHostTest {
     }
 
     @Test
+    fun `收件目录不存在建档自动创建并收齐校验`() {
+        // 回归闸（run 44521321264 实锤）：真机 filesDir 下 inbox 目录不存在，建档 ENOENT、全块丢弃。
+        // 单测基建此前的 mkdirs() 恰好掩盖了这条真实路径。
+        val data = content(100)
+        val bare = tmpDir.resolve("bare/inbox")
+        assertFalse(bare.exists())
+        val host = ControlledFileHost(bare)
+        val metaReceipt = host.onFileMeta(metaPayload(data.size.toLong(), FileChunkCodec.sha256Hex(data)))
+        assertTrue(bare.isDirectory)
+        assertFalse(receiptJson(metaReceipt!!).getBoolean("complete"))
+        var lastReceipt: ByteArray? = null
+        (0 until 4).forEach { idx ->
+            val from = idx * 32
+            val to = minOf(from + 32, data.size)
+            val r = host.onChunk(FileChunkCodec.encode("f.bin", idx, 4, data.copyOfRange(from, to)))
+            if (idx == 3) lastReceipt = r
+        }
+        assertTrue(receiptJson(lastReceipt!!).getBoolean("complete"))
+        assertEquals(FileChunkCodec.sha256Hex(data), FileReceiver.sha256Hex(bare.resolve("f.bin")))
+    }
+
+    @Test
     fun `未建档先收块丢弃`() {
         val host = ControlledFileHost(inbox)
         assertNull(host.onChunk(FileChunkCodec.encode("no-meta.bin", 0, 1, byteArrayOf(1, 2))))
