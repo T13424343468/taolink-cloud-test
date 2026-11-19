@@ -112,18 +112,26 @@ jobs:
           dump ui-ctrl-0.xml $ADB_CTRL
           grep -o 'text="[^"]*"' ui-ctrl-0.xml | sort -u > texts-ctrl-0.txt || true
           cat texts-ctrl-0.txt
-          if ! tap ui-ctrl-0.xml "让人帮" $ADB_CTRL; then echo "FALLBACK_DIRECT_LAUNCH_CTRL"; fi
-          sleep 10
+          # 主路径：input tap 在云环境不可靠（已知病），直接 am start 直启（shell 可启动非导出组件，标准云测 2c 已验证）
+          adb -s $ADB_CTRL shell am start -n com.tao.tao.link/.ui.PairCodeActivity
+          sleep 6
           dump ui-ctrl-1.xml $ADB_CTRL
           grep -o 'text="[^"]*"' ui-ctrl-1.xml | sort -u > texts-ctrl-1.txt || true
           cat texts-ctrl-1.txt
           CODE=$(grep -oE 'text="[0-9]{6}"' ui-ctrl-1.xml | head -1 | grep -oE '[0-9]{6}')
           if [ -z "$CODE" ]; then
-            echo "NOTE_TAP_NAVIGATION_UNRELIABLE: direct-launch controlled side via adbd root"
-            adb -s $ADB_CTRL root >/dev/null 2>&1 || true; sleep 3; adb -s $ADB_CTRL wait-for-device >/dev/null 2>&1 || true
-            adb -s $ADB_CTRL shell am start-foreground-service -n com.tao.tao.link/.service.ControlledSessionService >/dev/null 2>&1 || adb -s $ADB_CTRL shell am startservice -n com.tao.tao.link/.service.ControlledSessionService >/dev/null 2>&1 || true
+            echo "RETRY_VIA_ROOT: restart adbd root with boot_completed polling"
+            adb -s $ADB_CTRL root
+            adb -s $ADB_CTRL wait-for-device
+            for i in $(seq 1 10); do
+              B=$(adb -s $ADB_CTRL shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+              [ "$B" = "1" ] && break
+              sleep 3
+            done
+            echo "boot_completed=$B"
+            adb -s $ADB_CTRL shell am start-foreground-service -n com.tao.tao.link/.service.ControlledSessionService || true
             sleep 5
-            adb -s $ADB_CTRL shell am start -n com.tao.tao.link/.ui.PairCodeActivity >/dev/null 2>&1 || true
+            adb -s $ADB_CTRL shell am start -n com.tao.tao.link/.ui.PairCodeActivity
             sleep 8
             dump ui-ctrl-1.xml $ADB_CTRL
             grep -o 'text="[^"]*"' ui-ctrl-1.xml | sort -u > texts-ctrl-1.txt || true
@@ -131,7 +139,7 @@ jobs:
             CODE=$(grep -oE 'text="[0-9]{6}"' ui-ctrl-1.xml | head -1 | grep -oE '[0-9]{6}')
           fi
           echo "PAIRING_CODE=$CODE" | tee pairing-code.txt
-          [ -n "$CODE" ] || { echo "FAIL_PAIRING_CODE_NOT_VISIBLE"; adb -s $ADB_CTRL logcat -d > logcat-ctrl-pair.txt || true; exit 1; }
+          [ -n "$CODE" ] || { echo "FAIL_PAIRING_CODE_NOT_VISIBLE"; adb -s $ADB_CTRL logcat -d > logcat-ctrl-pair.txt 2>&1 || true; exit 1; }
 
       - name: "Stage B - master side, enter control mode and input pairing code"
         run: |
@@ -151,8 +159,15 @@ jobs:
           sleep 8
           dump ui-master-1.xml $ADB_HOST
           if ! grep -q "连接一台设备" ui-master-1.xml 2>/dev/null; then
-            adb -s $ADB_HOST root >/dev/null 2>&1 || true; sleep 3; adb -s $ADB_HOST wait-for-device >/dev/null 2>&1 || true
-            adb -s $ADB_HOST shell am start -n com.tao.tao.link/.ui.MasterHomeActivity >/dev/null 2>&1 || true
+            adb -s $ADB_HOST root
+            adb -s $ADB_HOST wait-for-device
+            for i in $(seq 1 10); do
+              B=$(adb -s $ADB_HOST shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+              [ "$B" = "1" ] && break
+              sleep 3
+            done
+            echo "boot_completed_master=$B"
+            adb -s $ADB_HOST shell am start -n com.tao.tao.link/.ui.MasterHomeActivity
             sleep 6
             dump ui-master-1.xml $ADB_HOST
           fi
