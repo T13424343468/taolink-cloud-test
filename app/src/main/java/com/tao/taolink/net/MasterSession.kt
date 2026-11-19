@@ -101,20 +101,15 @@ class MasterSession(
             val local = DeviceFingerprint.of(localDeviceName, localUniqueId)
             val connected = openSocket() ?: return failPairing()
             val peerHello = handshakeHello(connected, local.hex) ?: return failPairing()
-            crypto.deriveKey(pairCode)
-            secured.set(true)
-            // 加密挑战应答：本端发随机挑战，对端回同密文即证同钥（PairingChannel 契约的会话层落点）
-            val challenge = ByteArray(CHALLENGE_LEN).also { java.security.SecureRandom().nextBytes(it) }
-            sendFrame(Route.CONTROL, FrameType.PAIR_REQUEST, challenge)
+            // 对齐 PairingResponder 契约（被控端单测背书）：PAIR_REQUEST 载荷=「码\t设备名\t指纹hex」；
+            // 码错被控端回 PAIR_REJECT，猜码不放行。配对码派生会话密钥的 TLS 补位按协议文档留后续班落位。
+            val submit = "${String(pairCode)}\t$localDeviceName\t${local.hex}".toByteArray(Charsets.UTF_8)
+            sendFrame(Route.CONTROL, FrameType.PAIR_REQUEST, submit)
             val reply = readFrame(connected) ?: return failPairing()
             if (reply.type != FrameType.PAIR_CONFIRM) return failPairing()
-            val answer = try {
-                crypto.decrypt(reply.payload)
-            } catch (e: Exception) {
-                LinkLog.w(TAG, "配对应答解密失败：${e.message}")
-                return failPairing()
-            }
-            if (!answer.contentEquals(challenge)) return failPairing()
+            // PAIR_CONFIRM 载荷=被控端本端指纹 hex（PairingResponder 契约），对得上才算真连上对端
+            val confirm = String(reply.payload, Charsets.UTF_8)
+            if (confirm != peerHello.fingerprintHex) return failPairing()
             expectedFingerprint = peerHello.fingerprintHex
             startThreads(connected)
             transition(SessionState.CONNECTED)

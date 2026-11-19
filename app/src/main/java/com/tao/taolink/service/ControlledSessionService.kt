@@ -17,6 +17,8 @@ import com.tao.tao.link.protocol.DeviceFingerprint
 import com.tao.tao.link.protocol.DeviceIdentity
 import com.tao.tao.link.protocol.Frame
 import com.tao.tao.link.protocol.FrameType
+import com.tao.tao.link.protocol.JsonText
+import com.tao.tao.link.protocol.PROTOCOL_VERSION
 import com.tao.tao.link.protocol.HeartbeatMonitor
 import com.tao.tao.link.protocol.HeartbeatPolicy
 import com.tao.tao.link.protocol.PairingRecordStore
@@ -159,6 +161,16 @@ class ControlledSessionService : Service() {
                 // 状态随心跳捎带（协议 §2-9），不单独建连
                 connection.send(Frame(Route.STATUS, FrameType.STATUS, frame.seq, StatusCodec.encode(statusProvider.snapshot(online = true))))
                 connection.send(Frame(Route.CONTROL, FrameType.ACK, frame.seq, HEARTBEAT_ACK))
+            }
+            FrameType.HELLO -> {
+                // 握手契约（协议 §2-2）：明文 HELLO 交换指纹，主控端等本端回同型帧；不回则对端永久阻塞
+                val own = DeviceIdentity.ownFingerprint(filesDir, getString(R.string.default_device_name))
+                val hello = JsonText.obj(
+                    JsonText.field("v", PROTOCOL_VERSION),
+                    JsonText.field("name", own.deviceName),
+                    JsonText.field("fp", own.hex),
+                ).toByteArray(Charsets.UTF_8)
+                connection.send(Frame(Route.CONTROL, FrameType.HELLO, frame.seq, hello))
             }
             FrameType.PAIR_REQUEST -> {
                 val reply = handlePairRequest(frame.payload)
