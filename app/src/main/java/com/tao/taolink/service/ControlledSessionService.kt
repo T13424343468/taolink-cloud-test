@@ -21,8 +21,8 @@ import com.tao.tao.link.protocol.JsonText
 import com.tao.tao.link.protocol.PROTOCOL_VERSION
 import com.tao.tao.link.protocol.HeartbeatMonitor
 import com.tao.tao.link.protocol.HeartbeatPolicy
-import com.tao.tao.link.protocol.PairingRecordStore
 import com.tao.tao.link.protocol.PairingResponder
+import com.tao.tao.link.protocol.PairingResponderHolder
 import com.tao.tao.link.protocol.PathType
 import com.tao.tao.link.protocol.Route
 import com.tao.tao.link.protocol.SelfHealingBackoff
@@ -63,9 +63,9 @@ class ControlledSessionService : Service() {
     override fun onCreate() {
         super.onCreate()
         startForegroundAsResident()
-        pairingResponder = PairingResponder(
+        pairingResponder = PairingResponderHolder.get(
+            filesDir,
             DeviceIdentity.ownFingerprint(filesDir, getString(R.string.default_device_name)),
-            PairingRecordStore(filesDir),
         )
         server = SessionServer(SERVICE_PORT) { connection ->
             executor.execute {

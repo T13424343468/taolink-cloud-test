@@ -6,8 +6,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.tao.tao.link.R
 import com.tao.tao.link.protocol.DeviceFingerprint
 import com.tao.tao.link.protocol.DeviceIdentity
-import com.tao.tao.link.protocol.PairingRecordStore
 import com.tao.tao.link.protocol.PairingResponder
+import com.tao.tao.link.protocol.PairingResponderHolder
 
 /**
  * 被控端配对码大字显示（需求清单 §1：配对码被控端大字显示、主控端输入，被控端全程零输入）。
@@ -20,9 +20,9 @@ class PairCodeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pair_code)
-        responder = PairingResponder(
+        responder = PairingResponderHolder.get(
+            filesDir,
             DeviceIdentity.ownFingerprint(filesDir, getString(R.string.default_device_name)),
-            PairingRecordStore(filesDir),
         )
         findViewById<TextView>(R.id.pair_code_text).text = responder.displayCode()
     }

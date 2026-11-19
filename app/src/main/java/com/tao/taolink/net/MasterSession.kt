@@ -100,11 +100,15 @@ class MasterSession(
         return try {
             val local = DeviceFingerprint.of(localDeviceName, localUniqueId)
             val connected = openSocket() ?: return failPairing()
+            // 握手读加超时：对端不应答按配对失败收场，不给「永久卡在连接页」留门（双机实弹 2026-11-19 定因）
+            connected.soTimeout = HANDSHAKE_TIMEOUT_MS
             val peerHello = handshakeHello(connected, local.hex) ?: return failPairing()
             // 对齐 PairingResponder 契约（被控端单测背书）：PAIR_REQUEST 载荷=「码\t设备名\t指纹hex」；
             // 码错被控端回 PAIR_REJECT，猜码不放行。配对码派生会话密钥的 TLS 补位按协议文档留后续班落位。
             val submit = "${String(pairCode)}\t$localDeviceName\t${local.hex}".toByteArray(Charsets.UTF_8)
-            sendFrame(Route.CONTROL, FrameType.PAIR_REQUEST, submit)
+            if (!writeDirect(connected, wireBytes(Route.CONTROL, FrameType.PAIR_REQUEST, seqCounter.incrementAndGet(), submit))) {
+                return failPairing()
+            }
             val reply = readFrame(connected) ?: return failPairing()
             if (reply.type != FrameType.PAIR_CONFIRM) return failPairing()
             // PAIR_CONFIRM 载荷=被控端本端指纹 hex（PairingResponder 契约），对得上才算真连上对端
@@ -112,6 +116,7 @@ class MasterSession(
             if (confirm != peerHello.fingerprintHex) return failPairing()
             expectedFingerprint = peerHello.fingerprintHex
             startThreads(connected)
+            connected.soTimeout = 0 // 握手毕清超时：心跳读空闲不应被误判断线
             transition(SessionState.CONNECTED)
             monitor.onPeerHeartbeat()
             onPairCompleted?.invoke(DeviceFingerprint(peerHello.fingerprintHex, peerHello.deviceName))
@@ -186,6 +191,15 @@ class MasterSession(
         null
     }
 
+    /** 握手期直写：请求-应答同步收发，不经发送队列（写线程此刻未起跑）。 */
+    private fun writeDirect(socket: Socket, bytes: ByteArray): Boolean = try {
+        socket.getOutputStream().let { it.write(bytes); it.flush() }
+        true
+    } catch (e: Exception) {
+        LinkLog.w(TAG, "握手直写失败：${e.message}")
+        false
+    }
+
     private fun failPairing(): Boolean {
         running.set(false)
         closeSocket()
@@ -199,7 +213,8 @@ class MasterSession(
             JsonText.field("name", localDeviceName),
             JsonText.field("fp", localFingerprintHex),
         ).toByteArray(Charsets.UTF_8)
-        sendFrame(Route.CONTROL, FrameType.HELLO, hello)
+        // 握手期写线程尚未起跑（startThreads 在配对确认后），队列帧不上链路——握手收发一律同步直写
+        if (!writeDirect(socket, wireBytes(Route.CONTROL, FrameType.HELLO, seqCounter.incrementAndGet(), hello))) return null
         val reply = readFrame(socket) ?: return null
         if (reply.type != FrameType.HELLO) return null
         return parseHello(reply.payload)
@@ -329,6 +344,7 @@ class MasterSession(
             return
         }
         val connected = openSocket() ?: return
+        connected.soTimeout = HANDSHAKE_TIMEOUT_MS
         val local = DeviceFingerprint.of(localDeviceName, localUniqueId)
         val hello = handshakeHello(connected, local.hex)
         if (hello == null) {
@@ -342,8 +358,9 @@ class MasterSession(
         }
         // 重连免输码：内存密钥仍在（密钥不落盘口径），发加密心跳验证同钥
         secured.set(true)
-        sendFrame(Route.CONTROL, FrameType.HEARTBEAT, StatusCodec.encode(statusSnapshot()))
         startThreads(connected)
+        connected.soTimeout = 0
+        sendFrame(Route.CONTROL, FrameType.HEARTBEAT, StatusCodec.encode(statusSnapshot()))
         if (state == SessionState.SELF_HEALING) {
             transition(SessionState.CONNECTED)
             backoff.reset()
@@ -467,6 +484,9 @@ class MasterSession(
         private const val TAG = "MasterSession"
         private const val TICK_INTERVAL_MS = 250L
         private const val CONNECT_TIMEOUT_MS = 5_000
+
+        /** 握手单帧读超时：对端应答时限，超时按配对失败收场。 */
+        private const val HANDSHAKE_TIMEOUT_MS = 10_000
         private const val CHALLENGE_LEN = 8
         private const val MAX_FRAME_BYTES = 8 * 1024 * 1024
         private const val SEND_QUEUE_CAP = 1024
