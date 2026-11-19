@@ -34,6 +34,7 @@ import com.tao.tao.link.transport.SessionConnection
 import com.tao.tao.link.transport.SessionServer
 import com.tao.tao.link.ui.ControlledCallActivity
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -44,6 +45,8 @@ class ControlledSessionService : Service() {
 
     // 双机实弹 2026-11-19 定因：单线程池被心跳 while 循环永久占用，连接回调全部饿死（TCP 能通、HELLO 无人回）。
     // 改多线程池：心跳循环占一线程，连接接入/帧处理/来电动作并行不互相卡死。
+    private val heartbeatRunning = java.util.concurrent.atomic.AtomicBoolean(false)
+
     private val executor = Executors.newCachedThreadPool { r ->
         Thread(r, "taolink-ctl").apply { isDaemon = true }
     }
@@ -87,6 +90,7 @@ class ControlledSessionService : Service() {
     }
 
     override fun onDestroy() {
+        heartbeatRunning.set(false)
         server?.stop()
         callHost?.end()
         callHost = null
