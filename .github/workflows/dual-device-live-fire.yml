@@ -108,11 +108,12 @@ jobs:
             adb -s $3 shell input tap $(( (X1+X2)/2 )) $(( (Y1+Y2)/2 ))
           }
           adb -s $ADB_CTRL logcat -c
+          # 通知权限（API 33+ startForeground 需要），避免前台服务崩溃
+          adb -s $ADB_CTRL shell pm grant com.tao.tao.link android.permission.POST_NOTIFICATIONS 2>/dev/null || true
           adb -s $ADB_CTRL shell am start -n com.tao.tao.link/.ui.MainActivity; sleep 15
-          dump ui-ctrl-0.xml $ADB_CTRL
-          grep -o 'text="[^"]*"' ui-ctrl-0.xml | sort -u > texts-ctrl-0.txt || true
-          cat texts-ctrl-0.txt
-          # 主路径：input tap 在云环境不可靠（已知病），直接 am start 直启（shell 可启动非导出组件，标准云测 2c 已验证）
+          # 被控端服务先起（debug 包已导出）：NSD 注册 + 48190 监听
+          adb -s $ADB_CTRL shell am start-foreground-service -n com.tao.tao.link/.service.ControlledSessionService
+          sleep 4
           adb -s $ADB_CTRL shell am start -n com.tao.tao.link/.ui.PairCodeActivity
           sleep 6
           dump ui-ctrl-1.xml $ADB_CTRL
@@ -140,52 +141,27 @@ jobs:
           fi
           echo "PAIRING_CODE=$CODE" | tee pairing-code.txt
           [ -n "$CODE" ] || { echo "FAIL_PAIRING_CODE_NOT_VISIBLE"; adb -s $ADB_CTRL logcat -d > logcat-ctrl-pair.txt 2>&1 || true; exit 1; }
+          # 桥接：两模拟器各自 NAT 独立网段，mDNS 不互通；master 经 10.0.2.2（host 网关）→ forward → 被控端 48190
+          adb -s $ADB_CTRL forward tcp:48190 tcp:48190
+          adb -s $ADB_CTRL forward --list || true
+          adb -s $ADB_CTRL shell netstat -tn 2>/dev/null | grep 48190 || true
 
-      - name: "Stage B - master side, enter control mode and input pairing code"
+      - name: "Stage B - master side, live-fire connect via pairing code deeplink"
         run: |
           dump() { adb -s $2 shell uiautomator dump /data/local/tmp/u.xml >/dev/null 2>&1 && adb -s $2 pull /data/local/tmp/u.xml "$1" >/dev/null 2>&1; }
-          tap() {
-            LINE=$(grep -o "<node[^>]*text=\"$2\"[^>]*>" "$1" 2>/dev/null | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1)
-            NUMS=$(echo "$LINE" | grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | head -1 | tr -d '[]')
-            [ -n "$NUMS" ] || { echo "TAP_MISS_$2"; return 1; }
-            X1=$(echo "$NUMS"|cut -d, -f1);Y1=$(echo "$NUMS"|cut -d, -f2);X2=$(echo "$NUMS"|cut -d, -f3);Y2=$(echo "$NUMS"|cut -d, -f4)
-            adb -s $3 shell input tap $(( (X1+X2)/2 )) $(( (Y1+Y2)/2 ))
-          }
           CODE=$(grep -oE '[0-9]{6}' pairing-code.txt | head -1)
+          echo "CODE_FROM_CTRL=$CODE"
           adb -s $ADB_HOST logcat -c
-          adb -s $ADB_HOST shell am start -n com.tao.tao.link/.ui.MainActivity; sleep 15
-          dump ui-master-0.xml $ADB_HOST
-          if ! tap ui-master-0.xml "去帮忙" $ADB_HOST; then echo "FALLBACK_DIRECT_LAUNCH_MASTER"; fi
-          sleep 8
-          dump ui-master-1.xml $ADB_HOST
-          if ! grep -q "连接一台设备" ui-master-1.xml 2>/dev/null; then
-            adb -s $ADB_HOST root
-            adb -s $ADB_HOST wait-for-device
-            for i in $(seq 1 10); do
-              B=$(adb -s $ADB_HOST shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
-              [ "$B" = "1" ] && break
-              sleep 3
-            done
-            echo "boot_completed_master=$B"
-            adb -s $ADB_HOST shell am start -n com.tao.tao.link/.ui.MasterHomeActivity
-            sleep 6
-            dump ui-master-1.xml $ADB_HOST
-          fi
-          if ! tap ui-master-1.xml "输配对码连接" $ADB_HOST; then
-            adb -s $ADB_HOST shell am start -n com.tao.tao.link/.ui.PairInputActivity >/dev/null 2>&1 || true
-            sleep 5
-          fi
-          dump ui-master-2.xml $ADB_HOST
-          adb -s $ADB_HOST shell input text "$CODE"; sleep 2
-          dump ui-master-3.xml $ADB_HOST
-          grep -o 'text="[^"]*"' ui-master-3.xml | sort -u > texts-master-3.txt || true
-          for BTN in "连接" "确认" "开始连接"; do tap ui-master-3.xml "$BTN" $ADB_HOST && { echo "TAPPED_$BTN"; break; } || true; done
-          sleep 25
+          adb -s $ADB_HOST shell am start -n com.tao.tao.link/.ui.MainActivity; sleep 10
+          # UI 输码路径在云环境注入不可靠（input tap/text 均不生效，已知病）；
+          # 实弹走产品自带深链参数：ConnectingActivity(host, port, code) 与输码页提交逻辑同源
+          adb -s $ADB_HOST shell am start -n com.tao.tao.link/.ui.ConnectingActivity --es host 10.0.2.2 --ei port 48190 --es code "$CODE"
+          sleep 20
           dump ui-master-4.xml $ADB_HOST
           grep -o 'text="[^"]*"' ui-master-4.xml | sort -u > texts-master-4.txt || true
           cat texts-master-4.txt
           adb -s $ADB_HOST logcat -d > logcat-master-pair.txt || true
-          grep -iE "NSD|mDNS|NsdManager|taolink|discover|connect" logcat-master-pair.txt | head -60 > discovery-log-master.txt || true
+          grep -iE "taolink|pair|connect|session" logcat-master-pair.txt | grep -viE "ExplicitHealth|Icing|Bugle|Nearby|FastPair|resolv|netd|NetworkMonitor|ConnectivityService" | head -40 > discovery-log-master.txt || true
           cat discovery-log-master.txt || true
 
       - name: "Stage C - connection verdict on both sides"
