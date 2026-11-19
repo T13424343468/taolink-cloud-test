@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- R3 瓷釉令牌（深色=墨白）：值域正源=高保真原型 v8 [data-theme="dark"]，与浅色同结构逐令牌对应。
+     设计标准一.3：深浅各自成立，不互为反色。经 -night 限定符自动生效，不逐页判断。 -->
+<resources>
+    <color name="brand_bg">#16181B</color>
+    <color name="brand_text">#E8EAEC</color>
+    <color name="brand_text_sub">#A8AEB6</color>
+    <color name="brand_card">#1E2126</color>
+    <color name="brand_card_soft">#1E2C31</color>
+    <color name="brand_accent">#6FB3C7</color>
+    <color name="brand_accent_dark">#5C9CB0</color>
+    <color name="brand_on_accent">#0E1113</color>
+    <color name="brand_outline">#2A2E34</color>
+
+    <!-- 语义令牌：命名对齐原型 v8 :root -->
+    <color name="gl_ink2">#A8AEB6</color>
+    <color name="gl_ink3">#6B7076</color>
+    <color name="gl_accent_soft">#1E2C31</color>
+    <color name="gl_accent_ink">#0E1113</color>
+    <color name="gl_warn">#D89A6A</color>
+    <color name="gl_warn_soft">#2E241C</color>
+    <color name="gl_ok">#7FAE8C</color>
+    <color name="gl_line">#2A2E34</color>
+    <color name="gl_edge">#14FFFFFF</color>
+</resources>

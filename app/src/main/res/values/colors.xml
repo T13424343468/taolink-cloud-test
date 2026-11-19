@@ -1,12 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- R3 瓷釉令牌（浅色=水墨纯白）：正源=高保真原型 v8（全席位复审零改动，老板令 2026-11-19 23:47 全速推进放行）。
+     设计标准一.1 瓷釉为全系唯一语言：水墨纯白底 / 暗包边沉投影 / 语义令牌 / 层次靠衬不靠喊。
+     原 brand_* 令牌名保留兼容现有布局引用，值域按瓷釉重定；gl_* 新语义令牌供 R3 布局逐页接入。 -->
 <resources>
-    <color name="brand_bg">#FAF8F4</color>
-    <color name="brand_text">#2C2A24</color>
-    <color name="brand_text_sub">#6D675A</color>
+    <color name="brand_bg">#FFFFFF</color>
+    <color name="brand_text">#1C1E21</color>
+    <color name="brand_text_sub">#5A6169</color>
     <color name="brand_card">#FFFFFF</color>
-    <color name="brand_card_soft">#F6F5F1</color>
-    <color name="brand_accent">#C7451D</color>
-    <color name="brand_accent_dark">#A23614</color>
+    <color name="brand_card_soft">#EAF2F5</color>
+    <color name="brand_accent">#3D7A8F</color>
+    <color name="brand_accent_dark">#2F5F70</color>
     <color name="brand_on_accent">#FFFFFF</color>
-    <color name="brand_outline">#E4DED2</color>
+    <color name="brand_outline">#E8E6E1</color>
+
+    <!-- 语义令牌：命名对齐原型 v8 :root -->
+    <color name="gl_ink2">#5A6169</color>
+    <color name="gl_ink3">#9AA1A9</color>
+    <color name="gl_accent_soft">#EAF2F5</color>
+    <color name="gl_accent_ink">#FFFFFF</color>
+    <color name="gl_warn">#A65A2E</color>
+    <color name="gl_warn_soft">#F9EFE7</color>
+    <color name="gl_ok">#4A7C59</color>
+    <color name="gl_line">#E8E6E1</color>
+    <color name="gl_edge">#1A1C1E21</color>
 </resources>

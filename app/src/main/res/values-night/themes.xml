@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- R3 瓷釉深色主题：状态栏随墨白底色，图标转浅；edge-to-edge 口径与浅色同一处（R2 已在 values/themes.xml 关闭强制延伸）。 -->
+<resources>
+    <style name="Theme.TaoLink" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowBackground">@color/brand_bg</item>
+        <item name="android:statusBarColor">@color/brand_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="colorPrimary">@color/brand_accent</item>
+        <item name="colorAccent">@color/brand_accent</item>
+    </style>
+</resources>
