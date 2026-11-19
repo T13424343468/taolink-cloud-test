@@ -8,6 +8,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.tao.tao.link.R
 import com.tao.tao.link.net.MasterSession
+import com.tao.tao.link.net.MasterSessionHolder
 import com.tao.tao.link.protocol.DeviceIdentity
 import com.tao.tao.link.protocol.SessionState
 
@@ -45,6 +46,8 @@ class ConnectingActivity : AppCompatActivity() {
             runOnUiThread {
                 if (ok) {
                     setSteps(SessionState.CONNECTED)
+                    // 会话挂入持有者（通话/操控页从这里取活会话）：引用不随本页销毁而丢失
+                    MasterSessionHolder.attach(session)
                     ManageActivity.start(this, fingerprint, name)
                     finish()
                 } else {

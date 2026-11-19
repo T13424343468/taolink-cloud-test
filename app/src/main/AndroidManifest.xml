@@ -29,6 +29,8 @@
         <activity android:name=".ui.PairInputActivity" android:exported="false" />
         <activity android:name=".ui.ConnectingActivity" android:exported="false" />
         <activity android:name=".ui.ManageActivity" android:exported="false" />
+        <activity android:name=".ui.MasterCallActivity" android:exported="false" />
+        <activity android:name=".ui.ControlledCallActivity" android:exported="false" />
 
         <service
             android:name=".service.ControlledSessionService"

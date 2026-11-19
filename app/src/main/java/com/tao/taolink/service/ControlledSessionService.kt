@@ -3,12 +3,14 @@ package com.tao.tao.link.service
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import com.tao.tao.link.R
+import com.tao.tao.link.call.ControlledCallHost
 import com.tao.tao.link.control.AccessibilityControlExecutor
 import com.tao.tao.link.control.ControlDispatcher
 import com.tao.tao.link.protocol.DeviceFingerprint
@@ -27,7 +29,9 @@ import com.tao.tao.link.status.AndroidStatusProvider
 import com.tao.tao.link.status.StatusCodec
 import com.tao.tao.link.transport.SessionConnection
 import com.tao.tao.link.transport.SessionServer
+import com.tao.tao.link.ui.ControlledCallActivity
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * 被控端驻留前台服务（需求清单 §2 驻留项）：会话监听 + 配对应答 + 心跳应答 + 状态捎带 + 指令执行闭环。
@@ -49,8 +53,8 @@ class ControlledSessionService : Service() {
     @Volatile
     private var connectedPeerFingerprintHex: String? = null
 
-    /** 通话信令桥（被控端 WebRTC 引擎由宿主注入；语音引擎班 2026-11-19）。 */
-    var callSignalBridge: ((ByteArray) -> Unit)? = null
+    /** 被控端通话宿主（引擎生命周期挂服务；CALL_SIGNAL 帧经桥进出引擎，语音引擎班留口本班接线）。 */
+    private var callHost: ControlledCallHost? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -70,12 +74,40 @@ class ControlledSessionService : Service() {
         }
         server?.start()
         startHeartbeatLoop()
+        callHost = ControlledCallHost(this, { payload -> sendCallSignal(payload) }) { notifyIncomingCall() }
     }
 
     override fun onDestroy() {
         server?.stop()
+        callHost?.end()
+        callHost = null
         executor.shutdownNow()
         super.onDestroy()
+    }
+
+    /** 通话信令回程（引擎应答 SDP/ICE/挂断）：走既有加密会话 AUDIO 路由帧，seq 自增。 */
+    private fun sendCallSignal(payload: ByteArray) {
+        val connection = activeConnection ?: return
+        val seq = callSeqCounter.incrementAndGet()
+        connection.send(Frame(Route.AUDIO, FrameType.CALL_SIGNAL, seq, payload))
+    }
+
+    /** 来电轻提示（被控零操作，通话已自动接起）：点开才见画面，不点不打扰。 */
+    private fun notifyIncomingCall() {
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val contentIntent = PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, ControlledCallActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = Notification.Builder(this, CHANNEL_ID)
+            .setContentTitle(getText(R.string.resident_title))
+            .setContentText(getText(R.string.call_incoming_notify))
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentIntent(contentIntent)
+            .build()
+        manager.notify(INCOMING_CALL_NOTIFICATION_ID, notification)
     }
 
     /** 心跳循环：应答对端心跳、监测超时；超时进自愈态，退避间隔按 HeartbeatPolicy 起步 1s 封顶 30s。 */
@@ -137,7 +169,7 @@ class ControlledSessionService : Service() {
                 connection.send(Frame(Route.CONTROL, FrameType.ACK, frame.seq, if (ok) ACK_OK else ACK_FAIL))
             }
             FrameType.CALL_SIGNAL -> if (frame.route == Route.AUDIO) {
-                callSignalBridge?.invoke(frame.payload)
+                callHost?.onCallSignal(frame.payload)
             }
             else -> {
                 // 画面/文件通道由对位垂直实现接手，本班不透传不明帧
@@ -164,7 +196,7 @@ class ControlledSessionService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_MIN),
+                NotificationChannel(CHANNEL_ID, getText(R.string.resident_channel_name), NotificationManager.IMPORTANCE_MIN),
             )
             val notification = Notification.Builder(this, CHANNEL_ID)
                 .setContentTitle(getText(R.string.resident_title))
@@ -178,8 +210,11 @@ class ControlledSessionService : Service() {
     companion object {
         const val SERVICE_PORT = 48190
         private const val CHANNEL_ID = "taolink_resident"
-        private const val CHANNEL_NAME = "被控端驻留"
         private const val NOTIFICATION_ID = 48190
+        private const val INCOMING_CALL_NOTIFICATION_ID = 48191
+
+        /** 被控端主动发帧的序号源（应答信令回程用；主控端回执由对端 seq 对账，不冲突）。 */
+        private val callSeqCounter = AtomicLong(0)
 
         private val HEARTBEAT_ACK = byteArrayOf(1)
         private val ACK_OK = byteArrayOf(0)

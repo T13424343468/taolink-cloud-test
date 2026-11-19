@@ -86,4 +86,14 @@
     <string name="path_wan_direct">外网直连</string>
     <string name="path_wan_relay">云端中转</string>
     <string name="path_unrecorded">路径未记录</string>
+
+    <string name="call_status_ready">就绪，选择语音或视频发起通话</string>
+    <string name="call_status_connected">通话中</string>
+    <string name="call_btn_voice">语音通话</string>
+    <string name="call_btn_video">视频通话</string>
+    <string name="call_btn_hangup">挂断</string>
+    <string name="call_session_not_ready">会话未连接，先回到配对页重连</string>
+    <string name="call_permission_needed">未授权相机/麦克风，视频将只通声音或无画面</string>
+    <string name="call_incoming_notify">对方来电，点按查看画面</string>
+    <string name="resident_channel_name">被控端驻留</string>
 </resources>

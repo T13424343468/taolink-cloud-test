@@ -5,9 +5,11 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.tao.tao.link.R
+import com.tao.tao.link.net.MasterSessionHolder
 import com.tao.tao.link.protocol.PathType
 
 /**
@@ -45,7 +47,13 @@ class ManageActivity : AppCompatActivity() {
         }
         findViewById<Button>(R.id.btn_view_screen).setOnClickListener { finish() }
         findViewById<Button>(R.id.btn_call_entry).setOnClickListener {
-            // 通话页归通话垂直件；入口在位（定稿拍板 9：画面页常驻通话入口）
+            // 守门：会话死了不进通话页（半开会话页不产）；活的会话从持有者取
+            val session = MasterSessionHolder.get()
+            if (session == null || !session.isRunning()) {
+                Toast.makeText(this, R.string.call_session_not_ready, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            startActivity(Intent(this, MasterCallActivity::class.java))
         }
         findViewById<Button>(R.id.btn_files_entry).setOnClickListener {
             // 文件互传归文件垂直件；入口在位
