@@ -1,0 +1,312 @@
+name: dual-emulator-live
+on:
+  workflow_dispatch:
+  push:
+    branches: [dual-emu-lab]
+
+permissions:
+  contents: write
+
+jobs:
+  dual-device-live-fire:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 200
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Host capability probe
+        run: |
+          uname -a; nproc; free -h; ls -l /dev/kvm || echo "NO_KVM_DEVICE"
+
+      - name: Enable KVM
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm
+            echo "KVM_ENABLED"
+          else
+            echo "FAIL_NO_KVM_DEVICE"; exit 1
+          fi
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.9'
+
+      - name: Install Android SDK
+        run: |
+          ANDROID_HOME=$RUNNER_TEMP/android-sdk
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          curl -sSL -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q cmdline-tools.zip -d $ANDROID_HOME/cmdline-tools
+          mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platform-tools" "emulator" "system-images;android-31;google_apis;x86_64"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+
+      - name: Build APK from committed HEAD (contains WebRTC voice engine)
+        run: |
+          gradle assembleDebug --no-daemon -x lint 2>&1 | tail -20
+          APK=app/build/outputs/apk/debug/app-debug.apk
+          test -s "$APK" || { echo "FAIL_BUILD_NO_APK"; exit 1; }
+          cp "$APK" taolink-live.apk
+          sha256sum taolink-live.apk
+
+      - name: Create two AVDs
+        run: |
+          export ANDROID_AVD_HOME=$HOME/.android/avd
+          export ANDROID_USER_HOME=$HOME/.android
+          mkdir -p "$ANDROID_AVD_HOME"
+          echo no | avdmanager create avd -n tla -k "system-images;android-31;google_apis;x86_64"
+          echo no | avdmanager create avd -n tlb -k "system-images;android-31;google_apis;x86_64"
+          for n in tla tlb; do
+            CFG=$ANDROID_AVD_HOME/$n.avd/config.ini
+            grep -q '^hw.gpu.enabled=' "$CFG" && sed -i 's|^hw.gpu.enabled=.*|hw.gpu.enabled=no|' "$CFG" || echo 'hw.gpu.enabled=no' >> "$CFG"
+            grep -q '^hw.gpu.mode=' "$CFG" && sed -i 's|^hw.gpu.mode=.*|hw.gpu.mode=off|' "$CFG" || echo 'hw.gpu.mode=off' >> "$CFG"
+            echo 'hw.cpu.ncore=2' >> "$CFG" || true
+            echo 'hw.ramSize=2048' >> "$CFG" || true
+          done
+          ls -l "$ANDROID_AVD_HOME"
+
+      - name: Boot both emulators (KVM, swiftshader)
+        run: |
+          export ANDROID_AVD_HOME=$HOME/.android/avd
+          export ANDROID_USER_HOME=$HOME/.android
+          $ANDROID_HOME/emulator/emulator @tla -port 5554 -no-window -no-boot-anim -no-snapshot -gpu swiftshader_indirect -memory 2048 -cores 2 -audio none > emu-a.log 2>&1 &
+          sleep 15
+          $ANDROID_HOME/emulator/emulator @tlb -port 5556 -no-window -no-boot-anim -no-snapshot -gpu swiftshader_indirect -memory 2048 -cores 2 -audio none > emu-b.log 2>&1 &
+          sleep 45
+          CNT=$(pgrep -fc "emulator" || true)
+          echo "$CNT" | tee emu-proc-count.txt
+          [ "${CNT:-0}" -ge 2 ] || { echo "FAIL_TWO_EMULATORS_NOT_RUNNING"; tail -60 emu-a.log emu-b.log; exit 1; }
+          echo "PASS_TWO_EMULATORS_BOOTED"
+
+      - name: Wait for both to boot
+        run: |
+          START=$SECONDS
+          while true; do
+            OK=0
+            for S in emulator-5554 emulator-5556; do
+              if timeout 30 adb -s $S shell getprop sys.boot_completed 2>/dev/null | grep -q '^1$'; then OK=$((OK+1)); fi
+            done
+            [ "$OK" -eq 2 ] && { echo "BOTH_BOOT_COMPLETED"; break; }
+            [ $((SECONDS - START)) -gt 900 ] && { echo BOOT_TIMEOUT; adb devices; tail -80 emu-a.log emu-b.log; exit 1; }
+            sleep 15
+          done
+          adb devices
+
+      - name: Stage A - install + permissions on both devices
+        run: |
+          for S in emulator-5554 emulator-5556; do
+            adb -s $S install -r taolink-live.apk
+            adb -s $S shell pm list packages | grep com.tao.tao.link || { echo "FAIL_PKG_$S"; exit 1; }
+            adb -s $S shell pm grant com.tao.tao.link android.permission.POST_NOTIFICATIONS 2>/dev/null || true
+            adb -s $S shell pm grant com.tao.tao.link android.permission.CAMERA 2>/dev/null || true
+            adb -s $S shell pm grant com.tao.tao.link android.permission.RECORD_AUDIO 2>/dev/null || true
+            adb -s $S shell settings put secure enabled_accessibility_services com.tao.tao.link/com.tao.tao.link.accessibility.TaoLinkAccessibilityService 2>/dev/null || true
+            adb -s $S shell settings put secure accessibility_enabled 1 2>/dev/null || true
+            adb -s $S shell settings put global window_animation_scale 0
+            adb -s $S shell settings put global transition_animation_scale 0
+            adb -s $S shell settings put global animator_duration_scale 0
+          done
+          echo "PASS_INSTALL_BOTH"
+
+      - name: Stage B - controlled side shows pairing code (manual entry path)
+        run: |
+          A=emulator-5554
+          adb -s $A logcat -c
+          adb -s $A shell monkey -p com.tao.tao.link -c android.intent.category.LAUNCHER 1; sleep 20
+          adb -s $A shell uiautomator dump /data/local/tmp/ui.xml >/dev/null 2>&1 && adb -s $A pull /data/local/tmp/ui.xml ui-a-role.xml || { echo "FAIL_A_DUMP_ROLE"; exit 1; }
+          grep -o 'text="[^"]*"' ui-a-role.xml | sort -u
+          tapn() {
+            LINE=$(grep -o '<node[^>]*text="'"$2"'"[^>]*>' "$1" 2>/dev/null | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1)
+            NUMS=$(echo "$LINE" | grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | head -1 | tr -d '[]')
+            [ -n "$NUMS" ] || { echo "TAP_MISS_$2"; return 1; }
+            X1=$(echo "$NUMS" | cut -d, -f1); Y1=$(echo "$NUMS" | cut -d, -f2)
+            X2=$(echo "$NUMS" | cut -d, -f3); Y2=$(echo "$NUMS" | cut -d, -f4)
+            adb -s $3 shell input tap $(( (X1+X2)/2 )) $(( (Y1+Y2)/2 ))
+          }
+          tapn ui-a-role.xml "让人帮" $A; sleep 8
+          adb -s $A shell uiautomator dump /data/local/tmp/ui.xml >/dev/null 2>&1 && adb -s $A pull /data/local/tmp/ui.xml ui-a-code.xml || { echo "FAIL_A_DUMP_CODE"; exit 1; }
+          grep -o 'text="[^"]*"' ui-a-code.xml | sort -u > texts-a-code.txt; cat texts-a-code.txt
+          CODE=$(grep -oE 'text="[0-9]{6}"' ui-a-code.xml | head -1 | grep -oE '[0-9]{6}')
+          echo "PAIRING_CODE=${CODE:-NOT_VISIBLE}"
+          [ -n "$CODE" ] || { echo "FAIL_PAIRING_CODE_NOT_VISIBLE"; adb -s $A logcat -d > logcat-a-code.txt; exit 1; }
+          echo "$CODE" > pairing-code.txt
+          adb -s $A shell screencap -p /data/local/tmp/s.png && adb -s $A pull /data/local/tmp/s.png shot-a-code.png || true
+          echo "PASS_PAIRING_CODE_VISIBLE"
+
+      - name: Stage C - master side manual code entry + connect
+        run: |
+          B=emulator-5556
+          CODE=$(cat pairing-code.txt)
+          adb -s $B logcat -c
+          adb -s $B shell monkey -p com.tao.tao.link -c android.intent.category.LAUNCHER 1; sleep 20
+          adb -s $B shell uiautomator dump /data/local/tmp/ui.xml >/dev/null 2>&1 && adb -s $B pull /data/local/tmp/ui.xml ui-b-role.xml || { echo "FAIL_B_DUMP_ROLE"; exit 1; }
+          tapn() {
+            LINE=$(grep -o '<node[^>]*text="'"$2"'"[^>]*>' "$1" 2>/dev/null | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1)
+            NUMS=$(echo "$LINE" | grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | head -1 | tr -d '[]')
+            [ -n "$NUMS" ] || { echo "TAP_MISS_$2"; return 1; }
+            X1=$(echo "$NUMS" | cut -d, -f1); Y1=$(echo "$NUMS" | cut -d, -f2)
+            X2=$(echo "$NUMS" | cut -d, -f3); Y2=$(echo "$NUMS" | cut -d, -f4)
+            adb -s $3 shell input tap $(( (X1+X2)/2 )) $(( (Y1+Y2)/2 ))
+          }
+          tapn ui-b-role.xml "去帮忙" $B; sleep 8
+          adb -s $B shell uiautomator dump /data/local/tmp/ui.xml >/dev/null 2>&1 && adb -s $B pull /data/local/tmp/ui.xml ui-b-home.xml || { echo "FAIL_B_DUMP_HOME"; exit 1; }
+          grep -o 'text="[^"]*"' ui-b-home.xml | sort -u > texts-b-home.txt; cat texts-b-home.txt
+          tapn ui-b-home.xml "输配对码连接" $B; sleep 6
+          adb -s $B shell uiautomator dump /data/local/tmp/ui.xml >/dev/null 2>&1 && adb -s $B pull /data/local/tmp/ui.xml ui-b-input.xml || { echo "FAIL_B_DUMP_INPUT"; exit 1; }
+          adb -s $B shell input text "$CODE"; sleep 2
+          if grep -q 'text="连接"' ui-b-input.xml; then tapn ui-b-input.xml "连接" $B; fi
+          sleep 15
+          adb -s $B shell uiautomator dump /data/local/tmp/ui.xml >/dev/null 2>&1 && adb -s $B pull /data/local/tmp/ui.xml ui-b-connected.xml || true
+          grep -o 'text="[^"]*"' ui-b-connected.xml 2>/dev/null | sort -u > texts-b-connected.txt || true
+          cat texts-b-connected.txt
+          adb -s $A shell uiautomator dump /data/local/tmp/ui.xml >/dev/null 2>&1 && adb -s $A pull /data/local/tmp/ui.xml ui-a-connected.xml || true
+          grep -o 'text="[^"]*"' ui-a-connected.xml 2>/dev/null | sort -u > texts-a-connected.txt || true
+          cat texts-a-connected.txt
+          adb -s $A logcat -d > logcat-a-pair.txt; adb -s $B logcat -d > logcat-b-pair.txt
+          grep -iE "pair|session|connect" logcat-a-pair.txt | grep tao | head -20 > pair-evidence-a.txt || true
+          grep -iE "pair|session|connect" logcat-b-pair.txt | grep tao | head -20 > pair-evidence-b.txt || true
+          head -5 pair-evidence-a.txt pair-evidence-b.txt || true
+          PA=unclear
+          (grep -qiE "已连接|在线|connected" texts-b-connected.txt || grep -qiE "已连接|在线|connected" texts-a-connected.txt || [ -s pair-evidence-a.txt ]) && PA=ok || PA=unclear
+          for S in emulator-5554 emulator-5556; do adb -s $S shell ps -A | grep tao.tao.link || { echo "FAIL_PROCESS_GONE_$S"; exit 1; }; done
+          if [ "$PA" = "unclear" ]; then echo "WARN_PAIR_STATE_UNCLEAR"; else echo "PASS_PAIRING_LIVE"; fi
+          adb -s $A shell screencap -p /data/local/tmp/s.png && adb -s $A pull /data/local/tmp/s.png shot-a-connected.png || true
+          adb -s $B shell screencap -p /data/local/tmp/s.png && adb -s $B pull /data/local/tmp/s.png shot-b-connected.png || true
+
+      - name: Stage D - remote control live fire (real tap + real text via master)
+        run: |
+          A=emulator-5554; B=emulator-5556
+          adb -s $A logcat -c; adb -s $B logcat -c
+          tapn() {
+            LINE=$(grep -o '<node[^>]*text="'"$2"'"[^>]*>' "$1" 2>/dev/null | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1)
+            NUMS=$(echo "$LINE" | grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | head -1 | tr -d '[]')
+            [ -n "$NUMS" ] || { echo "TAP_MISS_$2"; return 1; }
+            X1=$(echo "$NUMS" | cut -d, -f1); Y1=$(echo "$NUMS" | cut -d, -f2)
+            X2=$(echo "$NUMS" | cut -d, -f3); Y2=$(echo "$NUMS" | cut -d, -f4)
+            adb -s $3 shell input tap $(( (X1+X2)/2 )) $(( (Y1+Y2)/2 ))
+          }
+          tapn ui-b-connected.xml "操控" $B || tapn ui-b-connected.xml "远控" $B || echo "NOTE: control entry name varies"
+          sleep 10
+          adb -s $B shell uiautomator dump /data/local/tmp/ui.xml >/dev/null 2>&1 && adb -s $B pull /data/local/tmp/ui.xml ui-b-control.xml || true
+          grep -o 'text="[^"]*"' ui-b-control.xml 2>/dev/null | sort -u > texts-b-control.txt || true; cat texts-b-control.txt
+          adb -s $B shell input text "live-fire-input-$(date +%s)"; sleep 6
+          adb -s $A logcat -d > logcat-a-control.txt; adb -s $B logcat -d > logcat-b-control.txt
+          grep -icE "accessibility|input.*event|gesture|inject" logcat-a-control.txt | head -1 > a-control-hits.txt || true
+          echo "controlled_side_hits=$(cat a-control-hits.txt)"
+          adb -s $A shell screencap -p /data/local/tmp/s.png && adb -s $A pull /data/local/tmp/s.png shot-a-controlled.png || true
+          adb -s $B shell screencap -p /data/local/tmp/s.png && adb -s $B pull /data/local/tmp/s.png shot-b-control.png || true
+          if [ "$(cat a-control-hits.txt)" = "0" ]; then
+            echo "RED_REMOTE_CONTROL_NO_EVENTS_ON_CONTROLLED"
+          else
+            echo "PASS_REMOTE_CONTROL_EVENTS"
+          fi
+
+      - name: Stage E - file transfer live fire with hash check
+        run: |
+          A=emulator-5554; B=emulator-5556
+          echo "dual-emu-file-$(date +%s)" > livefile.txt
+          H=$(sha256sum livefile.txt | cut -d' ' -f1)
+          adb -s $B push livefile.txt /sdcard/Download/livefile.txt >/dev/null
+          tapn() {
+            LINE=$(grep -o '<node[^>]*text="'"$2"'"[^>]*>' "$1" 2>/dev/null | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1)
+            NUMS=$(echo "$LINE" | grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | head -1 | tr -d '[]')
+            [ -n "$NUMS" ] || { echo "TAP_MISS_$2"; return 1; }
+            X1=$(echo "$NUMS" | cut -d, -f1); Y1=$(echo "$NUMS" | cut -d, -f2)
+            X2=$(echo "$NUMS" | cut -d, -f3); Y2=$(echo "$NUMS" | cut -d, -f4)
+            adb -s $3 shell input tap $(( (X1+X2)/2 )) $(( (Y1+Y2)/2 ))
+          }
+          tapn ui-b-control.xml "文件" $B || tapn ui-b-connected.xml "文件" $B || echo "NOTE: file entry name varies"
+          sleep 15
+          FOUND=0
+          for P in /sdcard/Download/livefile.txt /sdcard/Download/ /sdcard/taolink/; do
+            if adb -s $A shell test -f "$P/livefile.txt" 2>/dev/null; then
+              adb -s $A pull "$P/livefile.txt" received.txt >/dev/null
+              H2=$(sha256sum received.txt | cut -d' ' -f1)
+              echo "hash_local=$H hash_received=$H2"
+              [ "$H" = "$H2" ] && FOUND=1 && break
+            fi
+          done
+          if [ "$FOUND" = "1" ]; then echo "PASS_FILE_TRANSFER_HASH_MATCH"; else echo "RED_FILE_TRANSFER_NOT_VERIFIED"; fi
+          adb -s $A logcat -d > logcat-a-file.txt || true
+
+      - name: Stage F - voice call signaling live fire (audio route note: -audio none)
+        run: |
+          A=emulator-5554; B=emulator-5556
+          adb -s $A logcat -c; adb -s $B logcat -c
+          tapn() {
+            LINE=$(grep -o '<node[^>]*text="'"$2"'"[^>]*>' "$1" 2>/dev/null | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1)
+            NUMS=$(echo "$LINE" | grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | head -1 | tr -d '[]')
+            [ -n "$NUMS" ] || { echo "TAP_MISS_$2"; return 1; }
+            X1=$(echo "$NUMS" | cut -d, -f1); Y1=$(echo "$NUMS" | cut -d, -f2)
+            X2=$(echo "$NUMS" | cut -d, -f3); Y2=$(echo "$NUMS" | cut -d, -f4)
+            adb -s $3 shell input tap $(( (X1+X2)/2 )) $(( (Y1+Y2)/2 ))
+          }
+          tapn ui-b-control.xml "语音" $B || tapn ui-b-connected.xml "语音" $B || echo "NOTE: voice entry name varies"
+          sleep 15
+          adb -s $A logcat -d > logcat-a-call.txt; adb -s $B logcat -d > logcat-b-call.txt
+          SA=$(grep -icE "CALL_SIGNAL|webrtc|audio.*frame" logcat-a-call.txt | head -1 || true)
+          SB=$(grep -icE "CALL_SIGNAL|webrtc|audio.*frame" logcat-b-call.txt | head -1 || true)
+          echo "call_signal_hits_a=${SA:-0} call_signal_hits_b=${SB:-0}"
+          for S in $A $B; do adb -s $S shell ps -A | grep tao.tao.link || echo "WARN_PROCESS_GONE_$S"; done
+          if [ "${SA:-0}" -gt 0 ] && [ "${SB:-0}" -gt 0 ]; then
+            echo "PASS_VOICE_CALL_SIGNALING_BOTH_SIDES"
+          else
+            echo "RED_VOICE_CALL_SIGNALING_UNCONFIRMED"
+          fi
+          adb -s $A shell screencap -p /data/local/tmp/s.png && adb -s $A pull /data/local/tmp/s.png shot-a-call.png || true
+          adb -s $B shell screencap -p /data/local/tmp/s.png && adb -s $B pull /data/local/tmp/s.png shot-b-call.png || true
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dual-emulator-live-evidence
+          path: |
+            shot-*.png
+            ui-*.xml
+            texts-*.txt
+            pair-*.txt
+            *-hits.txt
+            logcat-*.txt
+            emu-a.log
+            emu-b.log
+            pairing-code.txt
+            livefile.txt
+            received.txt
+          if-no-files-found: warn
+
+      - name: Push evidence to evidence branch
+        if: always()
+        run: |
+          RID=${{ github.run_id }}
+          mkdir -p runs/dual-$RID
+          for f in shot-*.png ui-*.xml texts-*.txt pair-*.txt *-hits.txt logcat-*.txt pairing-code.txt; do
+            [ -e "$f" ] && cp "$f" runs/dual-$RID/ || true
+          done
+          git config user.name "taolink-ci"
+          git config user.email "ci@taolink.local"
+          git checkout -B dual-evidence 2>/dev/null || git checkout dual-evidence
+          git add runs/dual-$RID || true
+          git commit -m "dual emulator evidence run $RID" || echo "NO_EVIDENCE_CHANGES"
+          git push origin dual-evidence && echo "EVIDENCE_PUSHED" || echo "EVIDENCE_PUSH_FAILED"
+
+      - name: Kill emulators
+        if: always()
+        run: |
+          adb -s emulator-5554 emu kill 2>/dev/null || true
+          adb -s emulator-5556 emu kill 2>/dev/null || true
+          tail -80 emu-a.log emu-b.log 2>/dev/null || true
