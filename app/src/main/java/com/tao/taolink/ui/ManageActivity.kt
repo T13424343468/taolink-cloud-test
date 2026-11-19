@@ -24,8 +24,14 @@ class ManageActivity : AppCompatActivity() {
         setContentView(R.layout.activity_manage)
         val name = intent.getStringExtra(EXTRA_NAME).orEmpty()
         findViewById<TextView>(R.id.manage_peer).text = name
-        findViewById<TextView>(R.id.manage_state).text = getString(R.string.state_connected)
         findViewById<TextView>(R.id.manage_path).text = getString(R.string.path_lan)
+
+        // R7 呈现：状态行跟随会话状态机——断线自动重连（免重配对）与断开在详情页可见，
+        // 不再是静态「已连接」；会话由 MasterSessionHolder 持有，引用与页生命周期解耦。
+        MasterSessionHolder.get()?.onStateChanged = { s ->
+            runOnUiThread { renderSessionState(s) }
+        }
+        MasterSessionHolder.get()?.let { renderSessionState(it.currentState()) }
 
         findViewById<Button>(R.id.btn_disconnect).setOnClickListener {
             AlertDialog.Builder(this)
@@ -64,6 +70,22 @@ class ManageActivity : AppCompatActivity() {
             }
             startActivity(Intent(this, FileTransferActivity::class.java))
         }
+    }
+
+    override fun onDestroy() {
+        // 回调随页销毁摘除，防泄漏与跨页误更
+        MasterSessionHolder.get()?.onStateChanged = null
+        super.onDestroy()
+    }
+
+    private fun renderSessionState(s: com.tao.tao.link.protocol.SessionState) {
+        val res = when (s) {
+            com.tao.tao.link.protocol.SessionState.SELF_HEALING -> R.string.state_self_healing
+            com.tao.tao.link.protocol.SessionState.DISCONNECTED -> R.string.state_disconnected
+            com.tao.tao.link.protocol.SessionState.CONNECTED -> R.string.state_connected
+            else -> R.string.state_connected
+        }
+        findViewById<TextView>(R.id.manage_state).text = getString(res)
     }
 
     companion object {
