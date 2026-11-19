@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  仅 debug 构建生效：云测双机流水线需要 adb shell（uid 2000）直启内部组件，
+  该 API 等级上 shell 无 START_ANY_ACTIVITY，非导出组件会 SecurityException。
+  release 包不受影响，仍保持最小攻击面。
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application>
+        <activity android:name=".ui.PairCodeActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".ui.MasterHomeActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".ui.PairInputActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".ui.DiscoverActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".ui.ConnectingActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".ui.ManageActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".ui.MasterCallActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".ui.ControlledCallActivity" android:exported="true" tools:replace="android:exported" />
+
+        <service
+            android:name=".service.ControlledSessionService"
+            android:exported="true"
+            tools:replace="android:exported" />
+    </application>
+</manifest>
