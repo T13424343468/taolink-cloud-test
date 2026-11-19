@@ -96,7 +96,7 @@ jobs:
           done
           echo INSTALL_BOTH_OK
 
-      - name: Stage A - controlled side: enter serve mode, read pairing code
+      - name: "Stage A - controlled side, enter serve mode and read pairing code"
         run: |
           dump() { adb -s $2 shell uiautomator dump /data/local/tmp/u.xml >/dev/null 2>&1 && adb -s $2 pull /data/local/tmp/u.xml "$1" >/dev/null 2>&1; }
           tap() {
@@ -119,7 +119,7 @@ jobs:
           echo "PAIRING_CODE=$CODE" | tee pairing-code.txt
           [ -n "$CODE" ] || { echo "FAIL_PAIRING_CODE_NOT_VISIBLE"; adb -s $ADB_CTRL logcat -d > logcat-ctrl-pair.txt || true; exit 1; }
 
-      - name: Stage B - master side: enter control mode, input pairing code
+      - name: "Stage B - master side, enter control mode and input pairing code"
         run: |
           dump() { adb -s $2 shell uiautomator dump /data/local/tmp/u.xml >/dev/null 2>&1 && adb -s $2 pull /data/local/tmp/u.xml "$1" >/dev/null 2>&1; }
           tap() {
@@ -149,7 +149,7 @@ jobs:
           grep -iE "NSD|mDNS|NsdManager|taolink|discover|connect" logcat-master-pair.txt | head -60 > discovery-log-master.txt || true
           cat discovery-log-master.txt || true
 
-      - name: Stage C - connection verdict on both sides
+      - name: "Stage C - connection verdict on both sides"
         run: |
           dump() { adb -s $2 shell uiautomator dump /data/local/tmp/u.xml >/dev/null 2>&1 && adb -s $2 pull /data/local/tmp/u.xml "$1" >/dev/null 2>&1; }
           dump ui-ctrl-2.xml $ADB_CTRL
@@ -168,7 +168,7 @@ jobs:
             echo "SKIP_LIVE_FIRE=1" >> $GITHUB_ENV
           fi
 
-      - name: Stage D - live fire: file transfer, voice, video (only if paired)
+      - name: "Stage D - live fire, file transfer, voice, video"
         if: env.SKIP_LIVE_FIRE != '1'
         run: |
           dump() { adb -s $2 shell uiautomator dump /data/local/tmp/u.xml >/dev/null 2>&1 && adb -s $2 pull /data/local/tmp/u.xml "$1" >/dev/null 2>&1; }
