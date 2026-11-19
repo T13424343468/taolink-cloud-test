@@ -64,15 +64,24 @@ class ControlledCallHost(
         engine?.onCallSignal(payload)
     }
 
+    /** 结算重入闸：pc.close() 同步回调 onHangup 会重入 end()，重入路径在 close 进行中并发 dispose 原生资源
+     *  （云跑实弹 2026-11-19 实锤：被控帧处理线程就此卡死，心跳无人回，主控看门狗自愈重连）。 */
+    private val settling = java.util.concurrent.atomic.AtomicBoolean(false)
+
     fun end() {
-        // 挂断必须出网告知对端：只拆自己会让主控端引擎永不知情（同第六处跨端契约病）
-        if (engine != null) {
-            try { sendSignal(CallSignalCodec.encodeHangup()) } catch (_: Exception) {}
+        if (!settling.compareAndSet(false, true)) return
+        try {
+            // 挂断必须出网告知对端：只拆自己会让主控端引擎永不知情（同第六处跨端契约病）
+            if (engine != null) {
+                try { sendSignal(CallSignalCodec.encodeHangup()) } catch (_: Exception) {}
+            }
+            engine?.end()
+            engine = null
+            clearSnapshots()
+            ui?.onCallEnded()
+        } finally {
+            settling.set(false) // 账已清，后续 end() 是无害空转
         }
-        engine?.end()
-        engine = null
-        clearSnapshots()
-        ui?.onCallEnded()
     }
 
     companion object {
