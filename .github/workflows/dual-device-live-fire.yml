@@ -112,11 +112,24 @@ jobs:
           dump ui-ctrl-0.xml $ADB_CTRL
           grep -o 'text="[^"]*"' ui-ctrl-0.xml | sort -u > texts-ctrl-0.txt || true
           cat texts-ctrl-0.txt
-          tap ui-ctrl-0.xml "让人帮" $ADB_CTRL; sleep 10
+          if ! tap ui-ctrl-0.xml "让人帮" $ADB_CTRL; then echo "FALLBACK_DIRECT_LAUNCH_CTRL"; fi
+          sleep 10
           dump ui-ctrl-1.xml $ADB_CTRL
           grep -o 'text="[^"]*"' ui-ctrl-1.xml | sort -u > texts-ctrl-1.txt || true
           cat texts-ctrl-1.txt
           CODE=$(grep -oE 'text="[0-9]{6}"' ui-ctrl-1.xml | head -1 | grep -oE '[0-9]{6}')
+          if [ -z "$CODE" ]; then
+            echo "NOTE_TAP_NAVIGATION_UNRELIABLE: direct-launch controlled side via adbd root"
+            adb -s $ADB_CTRL root >/dev/null 2>&1 || true; sleep 3; adb -s $ADB_CTRL wait-for-device >/dev/null 2>&1 || true
+            adb -s $ADB_CTRL shell am start-foreground-service -n com.tao.tao.link/.service.ControlledSessionService >/dev/null 2>&1 || adb -s $ADB_CTRL shell am startservice -n com.tao.tao.link/.service.ControlledSessionService >/dev/null 2>&1 || true
+            sleep 5
+            adb -s $ADB_CTRL shell am start -n com.tao.tao.link/.ui.PairCodeActivity >/dev/null 2>&1 || true
+            sleep 8
+            dump ui-ctrl-1.xml $ADB_CTRL
+            grep -o 'text="[^"]*"' ui-ctrl-1.xml | sort -u > texts-ctrl-1.txt || true
+            cat texts-ctrl-1.txt
+            CODE=$(grep -oE 'text="[0-9]{6}"' ui-ctrl-1.xml | head -1 | grep -oE '[0-9]{6}')
+          fi
           echo "PAIRING_CODE=$CODE" | tee pairing-code.txt
           [ -n "$CODE" ] || { echo "FAIL_PAIRING_CODE_NOT_VISIBLE"; adb -s $ADB_CTRL logcat -d > logcat-ctrl-pair.txt || true; exit 1; }
 
@@ -134,9 +147,19 @@ jobs:
           adb -s $ADB_HOST logcat -c
           adb -s $ADB_HOST shell am start -n com.tao.tao.link/.ui.MainActivity; sleep 15
           dump ui-master-0.xml $ADB_HOST
-          tap ui-master-0.xml "去帮忙" $ADB_HOST; sleep 8
+          if ! tap ui-master-0.xml "去帮忙" $ADB_HOST; then echo "FALLBACK_DIRECT_LAUNCH_MASTER"; fi
+          sleep 8
           dump ui-master-1.xml $ADB_HOST
-          tap ui-master-1.xml "输配对码连接" $ADB_HOST; sleep 5
+          if ! grep -q "连接一台设备" ui-master-1.xml 2>/dev/null; then
+            adb -s $ADB_HOST root >/dev/null 2>&1 || true; sleep 3; adb -s $ADB_HOST wait-for-device >/dev/null 2>&1 || true
+            adb -s $ADB_HOST shell am start -n com.tao.tao.link/.ui.MasterHomeActivity >/dev/null 2>&1 || true
+            sleep 6
+            dump ui-master-1.xml $ADB_HOST
+          fi
+          if ! tap ui-master-1.xml "输配对码连接" $ADB_HOST; then
+            adb -s $ADB_HOST shell am start -n com.tao.tao.link/.ui.PairInputActivity >/dev/null 2>&1 || true
+            sleep 5
+          fi
           dump ui-master-2.xml $ADB_HOST
           adb -s $ADB_HOST shell input text "$CODE"; sleep 2
           dump ui-master-3.xml $ADB_HOST

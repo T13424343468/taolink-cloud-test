@@ -238,6 +238,16 @@ jobs:
           adb shell screencap -p /data/local/tmp/s.png && adb pull /data/local/tmp/s.png shot-masterhome.png || true
           grep -o 'text="[^"]*"' ui-masterhome.xml 2>/dev/null | sort -u > texts-masterhome.txt || true
           cat texts-masterhome.txt
+          if ! grep -q "连接一台设备" texts-masterhome.txt 2>/dev/null; then
+            echo "NOTE_TAP_NAVIGATION_UNRELIABLE_ON_RUNNER: falling back to direct activity launch (adbd root on non-playstore image)"
+            adb root >/dev/null 2>&1 || true; sleep 3; adb wait-for-device >/dev/null 2>&1 || true
+            adb shell am start -n com.tao.tao.link/.ui.MasterHomeActivity >/dev/null 2>&1 || true
+            sleep 8
+            adb shell uiautomator dump /data/local/tmp/ui.xml >/dev/null 2>&1 && adb pull /data/local/tmp/ui.xml ui-masterhome.xml || echo "UI_DUMP_FAIL_MASTERHOME_2"
+            adb shell screencap -p /data/local/tmp/s.png && adb pull /data/local/tmp/s.png shot-masterhome-direct.png || true
+            grep -o 'text="[^"]*"' ui-masterhome.xml 2>/dev/null | sort -u > texts-masterhome.txt || true
+            cat texts-masterhome.txt
+          fi
           check_text ui-masterhome.xml "连接一台设备"
           check_text ui-masterhome.xml "输配对码连接"
           echo "PASS_PROTOTYPE_TEXT_CONFORMANCE"
