@@ -276,6 +276,14 @@ jobs:
             gradle-build.log
           if-no-files-found: warn
 
+      - name: Upload APK (acceptance package)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: taolink-024-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: warn
+
       - name: Red alert beacon
         if: failure()
         run: |
