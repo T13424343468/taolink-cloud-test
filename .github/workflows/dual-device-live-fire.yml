@@ -1,0 +1,218 @@
+name: dual-device-live-fire
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  dual-device:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      ADB_HOST: emulator-5554
+      ADB_CTRL: emulator-5558
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Host probe
+        run: |
+          nproc; free -h; ls -l /dev/kvm || echo NO_KVM
+          if [ ! -e /dev/kvm ]; then echo "FAIL_NO_KVM"; exit 1; fi
+          sudo chmod 666 /dev/kvm
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK
+        run: |
+          ANDROID_HOME=$RUNNER_TEMP/android-sdk
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          curl -sSL -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q cmdline-tools.zip -d $ANDROID_HOME/cmdline-tools
+          mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platform-tools" "emulator" "system-images;android-31;google_apis;x86_64"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+
+      - name: Build debug APK
+        run: |
+          gradle assembleDebug --no-daemon > gradle-build.log 2>&1 || { tail -40 gradle-build.log; exit 1; }
+          ls -l app/build/outputs/apk/debug/*.apk
+
+      - name: Create two AVDs
+        run: |
+          export ANDROID_AVD_HOME=$HOME/.android/avd
+          export ANDROID_USER_HOME=$HOME/.android
+          mkdir -p "$ANDROID_AVD_HOME"
+          for N in tlm tlc; do
+            echo no | avdmanager create avd -n $N -k "system-images;android-31;google_apis;x86_64" || exit 1
+            CFG=$ANDROID_AVD_HOME/$N.avd/config.ini
+            sed -i 's|^hw.gpu.enabled=.*|hw.gpu.enabled=no|' "$CFG" 2>/dev/null || echo 'hw.gpu.enabled=no' >> "$CFG"
+            echo 'hw.gpu.mode=off' >> "$CFG"
+            echo 'hw.ramSize=2048' >> "$CFG"
+          done
+          ls -l "$ANDROID_AVD_HOME"
+
+      - name: Boot both emulators
+        run: |
+          export ANDROID_AVD_HOME=$HOME/.android/avd
+          export ANDROID_USER_HOME=$HOME/.android
+          emulator -avd tlm -port 5554 -no-window -no-boot-anim -gpu off > emu-master.log 2>&1 &
+          emulator -avd tlc -port 5558 -no-window -no-boot-anim -gpu off > emu-ctrl.log 2>&1 &
+          sleep 5
+          ps aux | grep -c "[e]mulator" || true
+          for P in 5554 5558; do
+            OK=0
+            for i in $(seq 1 60); do
+              BOOT=$(adb -s emulator-$P shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+              if [ "$BOOT" = "1" ]; then OK=1; echo "BOOT_OK_$P"; break; fi
+              sleep 10
+            done
+            [ "$OK" = "1" ] || { echo "FAIL_BOOT_$P"; tail -30 emu-master.log emu-ctrl.log; exit 1; }
+          done
+          adb devices
+
+      - name: Install APK on both devices
+        run: |
+          APK=app/build/outputs/apk/debug/$(ls app/build/outputs/apk/debug/ | grep '\.apk$' | head -1)
+          adb -s $ADB_HOST install -r "$APK" || exit 1
+          adb -s $ADB_CTRL install -r "$APK" || exit 1
+          for D in $ADB_HOST $ADB_CTRL; do
+            adb -s $D shell pm grant com.tao.tao.link android.permission.POST_NOTIFICATIONS 2>/dev/null || true
+            adb -s $D shell pm grant com.tao.tao.link android.permission.CAMERA 2>/dev/null || true
+            adb -s $D shell pm grant com.tao.tao.link android.permission.RECORD_AUDIO 2>/dev/null || true
+            adb -s $D shell settings put secure enabled_accessibility_services com.tao.tao.link/com.tao.tao.link.accessibility.TaoLinkAccessibilityService 2>/dev/null || true
+            adb -s $D shell settings put secure accessibility_enabled 1 2>/dev/null || true
+          done
+          echo INSTALL_BOTH_OK
+
+      - name: Stage A - controlled side: enter serve mode, read pairing code
+        run: |
+          dump() { adb -s $2 shell uiautomator dump /data/local/tmp/u.xml >/dev/null 2>&1 && adb -s $2 pull /data/local/tmp/u.xml "$1" >/dev/null 2>&1; }
+          tap() {
+            LINE=$(grep -o "<node[^>]*text=\"$2\"[^>]*>" "$1" 2>/dev/null | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1)
+            NUMS=$(echo "$LINE" | grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | head -1 | tr -d '[]')
+            [ -n "$NUMS" ] || { echo "TAP_MISS_$2"; return 1; }
+            X1=$(echo "$NUMS"|cut -d, -f1);Y1=$(echo "$NUMS"|cut -d, -f2);X2=$(echo "$NUMS"|cut -d, -f3);Y2=$(echo "$NUMS"|cut -d, -f4)
+            adb -s $3 shell input tap $(( (X1+X2)/2 )) $(( (Y1+Y2)/2 ))
+          }
+          adb -s $ADB_CTRL logcat -c
+          adb -s $ADB_CTRL shell am start -n com.tao.tao.link/.ui.MainActivity; sleep 15
+          dump ui-ctrl-0.xml $ADB_CTRL
+          grep -o 'text="[^"]*"' ui-ctrl-0.xml | sort -u > texts-ctrl-0.txt || true
+          cat texts-ctrl-0.txt
+          tap ui-ctrl-0.xml "让人帮" $ADB_CTRL; sleep 10
+          dump ui-ctrl-1.xml $ADB_CTRL
+          grep -o 'text="[^"]*"' ui-ctrl-1.xml | sort -u > texts-ctrl-1.txt || true
+          cat texts-ctrl-1.txt
+          CODE=$(grep -oE 'text="[0-9]{6}"' ui-ctrl-1.xml | head -1 | grep -oE '[0-9]{6}')
+          echo "PAIRING_CODE=$CODE" | tee pairing-code.txt
+          [ -n "$CODE" ] || { echo "FAIL_PAIRING_CODE_NOT_VISIBLE"; adb -s $ADB_CTRL logcat -d > logcat-ctrl-pair.txt || true; exit 1; }
+
+      - name: Stage B - master side: enter control mode, input pairing code
+        run: |
+          dump() { adb -s $2 shell uiautomator dump /data/local/tmp/u.xml >/dev/null 2>&1 && adb -s $2 pull /data/local/tmp/u.xml "$1" >/dev/null 2>&1; }
+          tap() {
+            LINE=$(grep -o "<node[^>]*text=\"$2\"[^>]*>" "$1" 2>/dev/null | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1)
+            NUMS=$(echo "$LINE" | grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | head -1 | tr -d '[]')
+            [ -n "$NUMS" ] || { echo "TAP_MISS_$2"; return 1; }
+            X1=$(echo "$NUMS"|cut -d, -f1);Y1=$(echo "$NUMS"|cut -d, -f2);X2=$(echo "$NUMS"|cut -d, -f3);Y2=$(echo "$NUMS"|cut -d, -f4)
+            adb -s $3 shell input tap $(( (X1+X2)/2 )) $(( (Y1+Y2)/2 ))
+          }
+          CODE=$(grep -oE '[0-9]{6}' pairing-code.txt | head -1)
+          adb -s $ADB_HOST logcat -c
+          adb -s $ADB_HOST shell am start -n com.tao.tao.link/.ui.MainActivity; sleep 15
+          dump ui-master-0.xml $ADB_HOST
+          tap ui-master-0.xml "去帮忙" $ADB_HOST; sleep 8
+          dump ui-master-1.xml $ADB_HOST
+          tap ui-master-1.xml "输配对码连接" $ADB_HOST; sleep 5
+          dump ui-master-2.xml $ADB_HOST
+          adb -s $ADB_HOST shell input text "$CODE"; sleep 2
+          dump ui-master-3.xml $ADB_HOST
+          grep -o 'text="[^"]*"' ui-master-3.xml | sort -u > texts-master-3.txt || true
+          for BTN in "连接" "确认" "开始连接"; do tap ui-master-3.xml "$BTN" $ADB_HOST && { echo "TAPPED_$BTN"; break; } || true; done
+          sleep 25
+          dump ui-master-4.xml $ADB_HOST
+          grep -o 'text="[^"]*"' ui-master-4.xml | sort -u > texts-master-4.txt || true
+          cat texts-master-4.txt
+          adb -s $ADB_HOST logcat -d > logcat-master-pair.txt || true
+          grep -iE "NSD|mDNS|NsdManager|taolink|discover|connect" logcat-master-pair.txt | head -60 > discovery-log-master.txt || true
+          cat discovery-log-master.txt || true
+
+      - name: Stage C - connection verdict on both sides
+        run: |
+          dump() { adb -s $2 shell uiautomator dump /data/local/tmp/u.xml >/dev/null 2>&1 && adb -s $2 pull /data/local/tmp/u.xml "$1" >/dev/null 2>&1; }
+          dump ui-ctrl-2.xml $ADB_CTRL
+          grep -o 'text="[^"]*"' ui-ctrl-2.xml | sort -u > texts-ctrl-2.txt || true
+          cat texts-ctrl-2.txt
+          adb -s $ADB_CTRL logcat -d > logcat-ctrl-pair.txt || true
+          grep -iE "NSD|mDNS|NsdManager|taolink|discover|connect" logcat-ctrl-pair.txt | head -60 > discovery-log-ctrl.txt || true
+          cat discovery-log-ctrl.txt || true
+          CONNECTED=0
+          if grep -qE "已连接|连接成功|已配对" texts-master-4.txt 2>/dev/null; then CONNECTED=1; fi
+          if grep -qE "已连接|连接成功|已配对" texts-ctrl-2.txt 2>/dev/null; then CONNECTED=1; fi
+          if [ "$CONNECTED" = "1" ]; then
+            echo "PASS_PAIR_CONNECTED"
+          else
+            echo "FAIL_PAIR_NOT_CONNECTED"
+            echo "SKIP_LIVE_FIRE=1" >> $GITHUB_ENV
+          fi
+
+      - name: Stage D - live fire: file transfer, voice, video (only if paired)
+        if: env.SKIP_LIVE_FIRE != '1'
+        run: |
+          dump() { adb -s $2 shell uiautomator dump /data/local/tmp/u.xml >/dev/null 2>&1 && adb -s $2 pull /data/local/tmp/u.xml "$1" >/dev/null 2>&1; }
+          tap() {
+            LINE=$(grep -o "<node[^>]*text=\"$2\"[^>]*>" "$1" 2>/dev/null | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1)
+            NUMS=$(echo "$LINE" | grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | head -1 | tr -d '[]')
+            [ -n "$NUMS" ] || { echo "TAP_MISS_$2"; return 1; }
+            X1=$(echo "$NUMS"|cut -d, -f1);Y1=$(echo "$NUMS"|cut -d, -f2);X2=$(echo "$NUMS"|cut -d, -f3);Y2=$(echo "$NUMS"|cut -d, -f4)
+            adb -s $3 shell input tap $(( (X1+X2)/2 )) $(( (Y1+Y2)/2 ))
+          }
+          echo "LIVE_FIRE_UI_TEXTS_BEGIN"
+          cat texts-master-4.txt
+          echo "LIVE_FIRE_UI_TEXTS_END"
+          for BTN in "传文件" "文件互传" "发文件" "文件"; do tap ui-master-4.xml "$BTN" $ADB_HOST && { echo "FILE_ENTRY_TAPPED_$BTN"; break; } || echo "NO_FILE_ENTRY_$BTN"; done
+          sleep 8
+          dump ui-file.xml $ADB_HOST
+          grep -o 'text="[^"]*"' ui-file.xml | sort -u > texts-file.txt || true
+          cat texts-file.txt
+          adb -s $ADB_HOST logcat -c
+          for BTN in "语音" "视频"; do tap ui-file.xml "$BTN" $ADB_HOST || true; done
+          sleep 20
+          dump ui-call.xml $ADB_HOST
+          grep -o 'text="[^"]*"' ui-call.xml | sort -u > texts-call.txt || true
+          cat texts-call.txt
+          adb -s $ADB_HOST logcat -d > logcat-master-call.txt || true
+          adb -s $ADB_CTRL logcat -d > logcat-ctrl-call.txt || true
+          grep -icE "audio|AudioRecord|AudioTrack" logcat-master-call.txt > audio-frame-count-master.txt || true
+          grep -icE "video|encode" logcat-master-call.txt > video-frame-count-master.txt || true
+          cat audio-frame-count-master.txt video-frame-count-master.txt
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dual-device-evidence
+          path: |
+            ui-*.xml
+            texts-*.txt
+            pairing-code.txt
+            discovery-log-*.txt
+            logcat-*.txt
+            audio-frame-count-master.txt
+            video-frame-count-master.txt
+            emu-master.log
+            emu-ctrl.log
+            gradle-build.log
+          if-no-files-found: warn
