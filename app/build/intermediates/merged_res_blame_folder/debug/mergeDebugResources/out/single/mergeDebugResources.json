@@ -1,9 +1,5 @@
 [
     {
-        "merged": "com.tao.tao.link.app-debug-23:/xml_accessibility_service_config.xml.flat",
-        "source": "com.tao.tao.link.app-main-25:/xml/accessibility_service_config.xml"
-    },
-    {
         "merged": "com.tao.tao.link.app-debug-23:/layout_activity_master_home.xml.flat",
         "source": "com.tao.tao.link.app-main-25:/layout/activity_master_home.xml"
     },
@@ -16,8 +12,28 @@
         "source": "com.tao.tao.link.app-main-25:/layout/activity_main.xml"
     },
     {
+        "merged": "com.tao.tao.link.app-debug-23:/layout_activity_controlled_call.xml.flat",
+        "source": "com.tao.tao.link.app-main-25:/layout/activity_controlled_call.xml"
+    },
+    {
         "merged": "com.tao.tao.link.app-debug-23:/layout_activity_pair_code.xml.flat",
         "source": "com.tao.tao.link.app-main-25:/layout/activity_pair_code.xml"
+    },
+    {
+        "merged": "com.tao.tao.link.app-debug-23:/layout_activity_pair_input.xml.flat",
+        "source": "com.tao.tao.link.app-main-25:/layout/activity_pair_input.xml"
+    },
+    {
+        "merged": "com.tao.tao.link.app-debug-23:/xml_accessibility_service_config.xml.flat",
+        "source": "com.tao.tao.link.app-main-25:/xml/accessibility_service_config.xml"
+    },
+    {
+        "merged": "com.tao.tao.link.app-debug-23:/layout_activity_master_call.xml.flat",
+        "source": "com.tao.tao.link.app-main-25:/layout/activity_master_call.xml"
+    },
+    {
+        "merged": "com.tao.tao.link.app-debug-23:/layout_activity_file_transfer.xml.flat",
+        "source": "com.tao.tao.link.app-main-25:/layout/activity_file_transfer.xml"
     },
     {
         "merged": "com.tao.tao.link.app-debug-23:/layout_activity_connecting.xml.flat",
@@ -26,10 +42,6 @@
     {
         "merged": "com.tao.tao.link.app-debug-23:/layout_activity_discover.xml.flat",
         "source": "com.tao.tao.link.app-main-25:/layout/activity_discover.xml"
-    },
-    {
-        "merged": "com.tao.tao.link.app-debug-23:/layout_activity_pair_input.xml.flat",
-        "source": "com.tao.tao.link.app-main-25:/layout/activity_pair_input.xml"
     },
     {
         "merged": "com.tao.tao.link.app-debug-23:/layout_item_discover_peer.xml.flat",

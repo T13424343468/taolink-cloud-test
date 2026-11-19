@@ -51,6 +51,7 @@ class MasterSession(
     var onPeerStatus: ((StatusChannel.PeerStatus) -> Unit)? = null
     var onScreenFrame: ((ByteArray) -> Unit)? = null
     var onCallSignal: ((ByteArray) -> Unit)? = null
+    var onFileReceipt: ((ByteArray) -> Unit)? = null
     var onPairCompleted: ((DeviceFingerprint) -> Unit)? = null
     var onCommandGiveUp: ((seq: Long) -> Unit)? = null
 
@@ -178,6 +179,15 @@ class MasterSession(
         return seq
     }
 
+    /** 文件元数据先于首块入链（收端据 name/sizeBytes/sha256 建档，协议文档 §2-8）。 */
+    fun sendFileMeta(payload: ByteArray): Long {
+        if (state != SessionState.CONNECTED && state != SessionState.CONTROLLING) return -1
+        val seq = seqCounter.incrementAndGet()
+        LinkLog.d(TAG, "文件元数据入队 seq=$seq len=${payload.size} state=$state")
+        enqueueWire(wireBytes(Route.FILE, FrameType.FILE_META, seq, payload))
+        return seq
+    }
+
     fun isRunning(): Boolean = running.get()
 
     // ============================ 会话内部 ============================
@@ -294,14 +304,21 @@ class MasterSession(
                 sendFrame(Route.CONTROL, FrameType.ACK, ackPayload(frame.seq))
                 StatusCodec.parse(frame.payload)?.let { onPeerStatus?.invoke(it) }
             }
-            FrameType.ACK -> {
-                val acked = parseAckSeq(frame.payload)
-                if (acked != null) {
-                    monitor.onPeerHeartbeat()
-                    if (state == SessionState.SELF_HEALING) transition(SessionState.CONNECTED)
-                    ackTracker.onAck(acked)
+            FrameType.ACK ->
+                when (frame.route) {
+                    // 文件回执走 JSON（收端账本：缺口/收妥/校验结果），与指令 ACK 的 9B seq 分流
+                    Route.FILE -> onFileReceipt?.invoke(frame.payload)
+                    else -> {
+                        val acked = parseAckSeq(frame.payload)
+                        if (acked != null) {
+                            monitor.onPeerHeartbeat()
+                            if (state == SessionState.SELF_HEALING) transition(SessionState.CONNECTED)
+                            ackTracker.onAck(acked)
+                        }
+                    }
                 }
-            }
+            FrameType.FILE_META ->
+                if (frame.route == Route.FILE) LinkLog.d(TAG, "收到文件元数据回环，忽略")
             FrameType.CALL_SIGNAL ->
                 when (frame.route) {
                     Route.AUDIO -> {

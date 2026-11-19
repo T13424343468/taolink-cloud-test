@@ -1,214 +1,239 @@
 1<?xml version="1.0" encoding="utf-8"?>
-2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-3    package="com.tao.tao.link"
-4    android:versionCode="5"
-5    android:versionName="0.2.3" >
-6
-7    <uses-sdk
-8        android:minSdkVersion="26"
-9        android:targetSdkVersion="35" />
-10
-11    <uses-permission android:name="android.permission.INTERNET" />
-11-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:4:5-67
-11-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:4:22-64
-12    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-12-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:5:5-79
-12-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:5:22-76
-13    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-13-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:6:5-76
-13-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:6:22-73
-14    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-14-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:7:5-77
-14-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:7:22-74
-15    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
-15-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:8:5-94
-15-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:8:22-91
-16    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
-16-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:9:5-94
-16-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:9:22-91
-17    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-17-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:10:5-77
-17-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:10:22-74
-18    <uses-permission android:name="android.permission.CAMERA" />
-18-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:11:5-65
-18-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:11:22-62
-19    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-19-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:12:5-71
-19-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:12:22-68
-20
-21    <permission
-21-->[androidx.core:core:1.13.1] /root/.gradle/caches/8.14/transforms/467c8dbfffae5b5e66ef3c744abaaaed/transformed/core-1.13.1/AndroidManifest.xml:22:5-24:47
-22        android:name="com.tao.tao.link.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
-22-->[androidx.core:core:1.13.1] /root/.gradle/caches/8.14/transforms/467c8dbfffae5b5e66ef3c744abaaaed/transformed/core-1.13.1/AndroidManifest.xml:23:9-81
-23        android:protectionLevel="signature" />
-23-->[androidx.core:core:1.13.1] /root/.gradle/caches/8.14/transforms/467c8dbfffae5b5e66ef3c744abaaaed/transformed/core-1.13.1/AndroidManifest.xml:24:9-44
-24
-25    <uses-permission android:name="com.tao.tao.link.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
-25-->[androidx.core:core:1.13.1] /root/.gradle/caches/8.14/transforms/467c8dbfffae5b5e66ef3c744abaaaed/transformed/core-1.13.1/AndroidManifest.xml:26:5-97
-25-->[androidx.core:core:1.13.1] /root/.gradle/caches/8.14/transforms/467c8dbfffae5b5e66ef3c744abaaaed/transformed/core-1.13.1/AndroidManifest.xml:26:22-94
-26
-27    <application
-27-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:14:5-49:19
-28        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
-28-->[androidx.core:core:1.13.1] /root/.gradle/caches/8.14/transforms/467c8dbfffae5b5e66ef3c744abaaaed/transformed/core-1.13.1/AndroidManifest.xml:28:18-86
-29        android:debuggable="true"
-30        android:extractNativeLibs="false"
-31        android:label="@string/app_name"
-31-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:15:9-41
-32        android:theme="@style/Theme.TaoLink" >
-32-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:16:9-45
-33        <activity
-33-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:17:9-22:20
-34            android:name="com.tao.tao.link.ui.MainActivity"
-34-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:17:19-50
-35            android:exported="true" >
-35-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:17:51-74
-36            <intent-filter>
-36-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:18:13-21:29
-37                <action android:name="android.intent.action.MAIN" />
-37-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:19:17-69
-37-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:19:25-66
-38
-39                <category android:name="android.intent.category.LAUNCHER" />
-39-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:20:17-77
-39-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:20:27-74
-40            </intent-filter>
-41        </activity>
+2<!--
+3  仅 debug 构建生效：云测双机流水线需要 adb shell（uid 2000）直启内部组件，
+4  该 API 等级上 shell 无 START_ANY_ACTIVITY，非导出组件会 SecurityException。
+5  release 包不受影响，仍保持最小攻击面。
+6-->
+7<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+8    package="com.tao.tao.link"
+9    android:versionCode="5"
+10    android:versionName="0.2.3" >
+11
+12    <uses-sdk
+13        android:minSdkVersion="26"
+14        android:targetSdkVersion="35" />
+15
+16    <uses-permission android:name="android.permission.INTERNET" />
+16-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:4:5-67
+16-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:4:22-64
+17    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+17-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:5:5-79
+17-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:5:22-76
+18    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+18-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:6:5-76
+18-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:6:22-73
+19    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+19-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:7:5-77
+19-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:7:22-74
+20    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+20-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:8:5-94
+20-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:8:22-91
+21    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+21-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:9:5-94
+21-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:9:22-91
+22    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+22-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:10:5-77
+22-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:10:22-74
+23    <uses-permission android:name="android.permission.CAMERA" />
+23-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:11:5-65
+23-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:11:22-62
+24    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+24-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:12:5-71
+24-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:12:22-68
+25
+26    <permission
+26-->[androidx.core:core:1.13.1] /root/.gradle/caches/8.14/transforms/467c8dbfffae5b5e66ef3c744abaaaed/transformed/core-1.13.1/AndroidManifest.xml:22:5-24:47
+27        android:name="com.tao.tao.link.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+27-->[androidx.core:core:1.13.1] /root/.gradle/caches/8.14/transforms/467c8dbfffae5b5e66ef3c744abaaaed/transformed/core-1.13.1/AndroidManifest.xml:23:9-81
+28        android:protectionLevel="signature" />
+28-->[androidx.core:core:1.13.1] /root/.gradle/caches/8.14/transforms/467c8dbfffae5b5e66ef3c744abaaaed/transformed/core-1.13.1/AndroidManifest.xml:24:9-44
+29
+30    <uses-permission android:name="com.tao.tao.link.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+30-->[androidx.core:core:1.13.1] /root/.gradle/caches/8.14/transforms/467c8dbfffae5b5e66ef3c744abaaaed/transformed/core-1.13.1/AndroidManifest.xml:26:5-97
+30-->[androidx.core:core:1.13.1] /root/.gradle/caches/8.14/transforms/467c8dbfffae5b5e66ef3c744abaaaed/transformed/core-1.13.1/AndroidManifest.xml:26:22-94
+31
+32    <application
+32-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:14:5-53:19
+33        android:name="com.tao.tao.link.TaoLinkApp"
+33-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:15:9-35
+34        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+34-->[androidx.core:core:1.13.1] /root/.gradle/caches/8.14/transforms/467c8dbfffae5b5e66ef3c744abaaaed/transformed/core-1.13.1/AndroidManifest.xml:28:18-86
+35        android:debuggable="true"
+36        android:extractNativeLibs="false"
+37        android:label="@string/app_name"
+37-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:16:9-41
+38        android:theme="@style/Theme.TaoLink" >
+38-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:17:9-45
+39        <activity
+39-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:25:9-82
+40            android:name="com.tao.tao.link.ui.PairCodeActivity"
+40-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:25:19-54
+41            android:exported="true" />
+41-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:25:55-79
 42        <activity
-42-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:24:9-82
-43            android:name="com.tao.tao.link.ui.PairCodeActivity"
-43-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:24:19-54
-44            android:exported="false" />
-44-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:24:55-79
-45
-46        <!-- 主控端界面（0.2.3，定稿原型 v2 主控侧屏） -->
-47        <activity
-47-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:27:9-84
-48            android:name="com.tao.tao.link.ui.MasterHomeActivity"
-48-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:27:19-56
-49            android:exported="false" />
-49-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:27:57-81
-50        <activity
-50-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:28:9-82
-51            android:name="com.tao.tao.link.ui.DiscoverActivity"
-51-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:28:19-54
-52            android:exported="false" />
-52-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:28:55-79
-53        <activity
-53-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:29:9-83
-54            android:name="com.tao.tao.link.ui.PairInputActivity"
-54-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:29:19-55
-55            android:exported="false" />
-55-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:29:56-80
-56        <activity
-56-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:30:9-84
-57            android:name="com.tao.tao.link.ui.ConnectingActivity"
-57-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:30:19-56
-58            android:exported="false" />
-58-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:30:57-81
-59        <activity
-59-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:31:9-80
-60            android:name="com.tao.tao.link.ui.ManageActivity"
-60-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:31:19-52
-61            android:exported="false" />
-61-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:31:53-77
-62
-63        <service
-63-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:33:9-36:63
-64            android:name="com.tao.tao.link.service.ControlledSessionService"
-64-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:34:13-61
-65            android:exported="false"
-65-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:35:13-37
-66            android:foregroundServiceType="connectedDevice" />
-66-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:36:13-60
-67        <service
-67-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:38:9-48:19
-68            android:name="com.tao.tao.link.accessibility.TaoLinkAccessibilityService"
-68-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:39:13-70
-69            android:exported="false"
-69-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:40:13-37
-70            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
-70-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:41:13-79
-71            <intent-filter>
-71-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:42:13-44:29
-72                <action android:name="android.accessibilityservice.AccessibilityService" />
-72-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:43:17-92
-72-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:43:25-89
-73            </intent-filter>
+42-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:28:9-84
+43            android:name="com.tao.tao.link.ui.MasterHomeActivity"
+43-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:28:19-56
+44            android:exported="true" />
+44-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:28:57-81
+45        <activity
+45-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:30:9-83
+46            android:name="com.tao.tao.link.ui.PairInputActivity"
+46-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:30:19-55
+47            android:exported="true" />
+47-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:30:56-80
+48        <activity
+48-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:29:9-82
+49            android:name="com.tao.tao.link.ui.DiscoverActivity"
+49-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:29:19-54
+50            android:exported="true" />
+50-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:29:55-79
+51        <activity
+51-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:31:9-84
+52            android:name="com.tao.tao.link.ui.ConnectingActivity"
+52-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:31:19-56
+53            android:exported="true" />
+53-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:31:57-81
+54        <activity
+54-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:32:9-80
+55            android:name="com.tao.tao.link.ui.ManageActivity"
+55-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:32:19-52
+56            android:exported="true" />
+56-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:32:53-77
+57        <activity
+57-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:33:9-84
+58            android:name="com.tao.tao.link.ui.MasterCallActivity"
+58-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:33:19-56
+59            android:exported="true" />
+59-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:33:57-81
+60        <activity
+60-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:35:9-88
+61            android:name="com.tao.tao.link.ui.ControlledCallActivity"
+61-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:35:19-60
+62            android:exported="true" />
+62-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:35:61-85
+63
+64        <service
+64-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:37:9-40:63
+65            android:name="com.tao.tao.link.service.ControlledSessionService"
+65-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:38:13-61
+66            android:exported="true"
+66-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:39:13-37
+67            android:foregroundServiceType="connectedDevice" />
+67-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:40:13-60
+68
+69        <activity
+69-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:18:9-23:20
+70            android:name="com.tao.tao.link.ui.MainActivity"
+70-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:18:19-50
+71            android:exported="true" >
+71-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:18:51-74
+72            <intent-filter>
+72-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:19:13-22:29
+73                <action android:name="android.intent.action.MAIN" />
+73-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:20:17-69
+73-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:20:25-66
 74
-75            <meta-data
-75-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:45:13-47:72
-76                android:name="android.accessibilityservice"
-76-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:46:17-60
-77                android:resource="@xml/accessibility_service_config" />
-77-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:47:17-69
-78        </service>
-79
-80        <provider
-80-->[androidx.emoji2:emoji2:1.3.0] /root/.gradle/caches/8.14/transforms/3e0e4e434b031d1f177c457538cca091/transformed/emoji2-1.3.0/AndroidManifest.xml:24:9-32:20
-81            android:name="androidx.startup.InitializationProvider"
-81-->[androidx.emoji2:emoji2:1.3.0] /root/.gradle/caches/8.14/transforms/3e0e4e434b031d1f177c457538cca091/transformed/emoji2-1.3.0/AndroidManifest.xml:25:13-67
-82            android:authorities="com.tao.tao.link.androidx-startup"
-82-->[androidx.emoji2:emoji2:1.3.0] /root/.gradle/caches/8.14/transforms/3e0e4e434b031d1f177c457538cca091/transformed/emoji2-1.3.0/AndroidManifest.xml:26:13-68
-83            android:exported="false" >
-83-->[androidx.emoji2:emoji2:1.3.0] /root/.gradle/caches/8.14/transforms/3e0e4e434b031d1f177c457538cca091/transformed/emoji2-1.3.0/AndroidManifest.xml:27:13-37
-84            <meta-data
-84-->[androidx.emoji2:emoji2:1.3.0] /root/.gradle/caches/8.14/transforms/3e0e4e434b031d1f177c457538cca091/transformed/emoji2-1.3.0/AndroidManifest.xml:29:13-31:52
-85                android:name="androidx.emoji2.text.EmojiCompatInitializer"
-85-->[androidx.emoji2:emoji2:1.3.0] /root/.gradle/caches/8.14/transforms/3e0e4e434b031d1f177c457538cca091/transformed/emoji2-1.3.0/AndroidManifest.xml:30:17-75
-86                android:value="androidx.startup" />
-86-->[androidx.emoji2:emoji2:1.3.0] /root/.gradle/caches/8.14/transforms/3e0e4e434b031d1f177c457538cca091/transformed/emoji2-1.3.0/AndroidManifest.xml:31:17-49
-87            <meta-data
-87-->[androidx.lifecycle:lifecycle-process:2.6.2] /root/.gradle/caches/8.14/transforms/b37ec9042513de67029df394a445b759/transformed/lifecycle-process-2.6.2/AndroidManifest.xml:29:13-31:52
-88                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
-88-->[androidx.lifecycle:lifecycle-process:2.6.2] /root/.gradle/caches/8.14/transforms/b37ec9042513de67029df394a445b759/transformed/lifecycle-process-2.6.2/AndroidManifest.xml:30:17-78
-89                android:value="androidx.startup" />
-89-->[androidx.lifecycle:lifecycle-process:2.6.2] /root/.gradle/caches/8.14/transforms/b37ec9042513de67029df394a445b759/transformed/lifecycle-process-2.6.2/AndroidManifest.xml:31:17-49
+75                <category android:name="android.intent.category.LAUNCHER" />
+75-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:21:17-77
+75-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:21:27-74
+76            </intent-filter>
+77        </activity>
+78        <activity
+78-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:34:9-86
+79            android:name="com.tao.tao.link.ui.FileTransferActivity"
+79-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:34:19-58
+80            android:exported="false" />
+80-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:34:59-83
+81
+82        <service
+82-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:42:9-52:19
+83            android:name="com.tao.tao.link.accessibility.TaoLinkAccessibilityService"
+83-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:43:13-70
+84            android:exported="false"
+84-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:44:13-37
+85            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
+85-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:45:13-79
+86            <intent-filter>
+86-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:46:13-48:29
+87                <action android:name="android.accessibilityservice.AccessibilityService" />
+87-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:47:17-92
+87-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:47:25-89
+88            </intent-filter>
+89
 90            <meta-data
-90-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:29:13-31:52
-91                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
-91-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:30:17-85
-92                android:value="androidx.startup" />
-92-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:31:17-49
-93        </provider>
+90-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:49:13-51:72
+91                android:name="android.accessibilityservice"
+91-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:50:17-60
+92                android:resource="@xml/accessibility_service_config" />
+92-->/root/workspace/taolink-cloud-test/app/src/main/AndroidManifest.xml:51:17-69
+93        </service>
 94
-95        <receiver
-95-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:34:9-52:20
-96            android:name="androidx.profileinstaller.ProfileInstallReceiver"
-96-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:35:13-76
-97            android:directBootAware="false"
-97-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:36:13-44
-98            android:enabled="true"
-98-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:37:13-35
-99            android:exported="true"
-99-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:38:13-36
-100            android:permission="android.permission.DUMP" >
-100-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:39:13-57
-101            <intent-filter>
-101-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:40:13-42:29
-102                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
-102-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:17-91
-102-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:25-88
-103            </intent-filter>
-104            <intent-filter>
-104-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:43:13-45:29
-105                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
-105-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:17-85
-105-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:25-82
-106            </intent-filter>
-107            <intent-filter>
-107-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:46:13-48:29
-108                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
-108-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:17-88
-108-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:25-85
-109            </intent-filter>
-110            <intent-filter>
-110-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:49:13-51:29
-111                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
-111-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:17-95
-111-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:25-92
-112            </intent-filter>
-113        </receiver>
-114    </application>
-115
-116</manifest>
+95        <provider
+95-->[androidx.emoji2:emoji2:1.3.0] /root/.gradle/caches/8.14/transforms/3e0e4e434b031d1f177c457538cca091/transformed/emoji2-1.3.0/AndroidManifest.xml:24:9-32:20
+96            android:name="androidx.startup.InitializationProvider"
+96-->[androidx.emoji2:emoji2:1.3.0] /root/.gradle/caches/8.14/transforms/3e0e4e434b031d1f177c457538cca091/transformed/emoji2-1.3.0/AndroidManifest.xml:25:13-67
+97            android:authorities="com.tao.tao.link.androidx-startup"
+97-->[androidx.emoji2:emoji2:1.3.0] /root/.gradle/caches/8.14/transforms/3e0e4e434b031d1f177c457538cca091/transformed/emoji2-1.3.0/AndroidManifest.xml:26:13-68
+98            android:exported="false" >
+98-->[androidx.emoji2:emoji2:1.3.0] /root/.gradle/caches/8.14/transforms/3e0e4e434b031d1f177c457538cca091/transformed/emoji2-1.3.0/AndroidManifest.xml:27:13-37
+99            <meta-data
+99-->[androidx.emoji2:emoji2:1.3.0] /root/.gradle/caches/8.14/transforms/3e0e4e434b031d1f177c457538cca091/transformed/emoji2-1.3.0/AndroidManifest.xml:29:13-31:52
+100                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+100-->[androidx.emoji2:emoji2:1.3.0] /root/.gradle/caches/8.14/transforms/3e0e4e434b031d1f177c457538cca091/transformed/emoji2-1.3.0/AndroidManifest.xml:30:17-75
+101                android:value="androidx.startup" />
+101-->[androidx.emoji2:emoji2:1.3.0] /root/.gradle/caches/8.14/transforms/3e0e4e434b031d1f177c457538cca091/transformed/emoji2-1.3.0/AndroidManifest.xml:31:17-49
+102            <meta-data
+102-->[androidx.lifecycle:lifecycle-process:2.6.2] /root/.gradle/caches/8.14/transforms/b37ec9042513de67029df394a445b759/transformed/lifecycle-process-2.6.2/AndroidManifest.xml:29:13-31:52
+103                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+103-->[androidx.lifecycle:lifecycle-process:2.6.2] /root/.gradle/caches/8.14/transforms/b37ec9042513de67029df394a445b759/transformed/lifecycle-process-2.6.2/AndroidManifest.xml:30:17-78
+104                android:value="androidx.startup" />
+104-->[androidx.lifecycle:lifecycle-process:2.6.2] /root/.gradle/caches/8.14/transforms/b37ec9042513de67029df394a445b759/transformed/lifecycle-process-2.6.2/AndroidManifest.xml:31:17-49
+105            <meta-data
+105-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:29:13-31:52
+106                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+106-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:30:17-85
+107                android:value="androidx.startup" />
+107-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:31:17-49
+108        </provider>
+109
+110        <receiver
+110-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:34:9-52:20
+111            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+111-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:35:13-76
+112            android:directBootAware="false"
+112-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:36:13-44
+113            android:enabled="true"
+113-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:37:13-35
+114            android:exported="true"
+114-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:38:13-36
+115            android:permission="android.permission.DUMP" >
+115-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:39:13-57
+116            <intent-filter>
+116-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:40:13-42:29
+117                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+117-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:17-91
+117-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:25-88
+118            </intent-filter>
+119            <intent-filter>
+119-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:43:13-45:29
+120                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+120-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:17-85
+120-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:25-82
+121            </intent-filter>
+122            <intent-filter>
+122-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:46:13-48:29
+123                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+123-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:17-88
+123-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:25-85
+124            </intent-filter>
+125            <intent-filter>
+125-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:49:13-51:29
+126                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+126-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:17-95
+126-->[androidx.profileinstaller:profileinstaller:1.3.1] /root/.gradle/caches/8.14/transforms/4bcfc44e82cc40c4981afaef662426e6/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:25-92
+127            </intent-filter>
+128        </receiver>
+129    </application>
+130
+131</manifest>

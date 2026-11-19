@@ -31,6 +31,7 @@
         <activity android:name=".ui.ConnectingActivity" android:exported="false" />
         <activity android:name=".ui.ManageActivity" android:exported="false" />
         <activity android:name=".ui.MasterCallActivity" android:exported="false" />
+        <activity android:name=".ui.FileTransferActivity" android:exported="false" />
         <activity android:name=".ui.ControlledCallActivity" android:exported="false" />
 
         <service

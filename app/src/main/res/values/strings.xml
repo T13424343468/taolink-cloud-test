@@ -96,4 +96,14 @@
     <string name="call_permission_needed">未授权相机/麦克风，视频将只通声音或无画面</string>
     <string name="call_incoming_notify">对方来电，点按查看画面</string>
     <string name="resident_channel_name">被控端驻留</string>
+
+    <!-- 文件互传页（文件垂直件接线 2026-11-19） -->
+    <string name="file_title">传文件</string>
+    <string name="file_status_idle">选一个文件发给对方</string>
+    <string name="file_status_sending">正在发送… %1$d%%</string>
+    <string name="file_status_done">发送完成，对方已收妥</string>
+    <string name="file_status_verify_failed">对方校验失败，请重发</string>
+    <string name="file_pick">选文件</string>
+    <string name="file_pick_failed">文件读取失败，请重选</string>
+    <string name="file_back">返回</string>
 </resources>

@@ -14,6 +14,7 @@ import com.tao.tao.link.R
 import com.tao.tao.link.call.ControlledCallHost
 import com.tao.tao.link.control.AccessibilityControlExecutor
 import com.tao.tao.link.control.ControlDispatcher
+import com.tao.tao.link.file.ControlledFileHost
 import com.tao.tao.link.protocol.DeviceFingerprint
 import com.tao.tao.link.protocol.DeviceIdentity
 import com.tao.tao.link.protocol.Frame
@@ -33,6 +34,7 @@ import com.tao.tao.link.status.StatusCodec
 import com.tao.tao.link.transport.SessionConnection
 import com.tao.tao.link.transport.SessionServer
 import com.tao.tao.link.ui.ControlledCallActivity
+import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
@@ -66,6 +68,9 @@ class ControlledSessionService : Service() {
     /** 被控端通话宿主（引擎生命周期挂服务；CALL_SIGNAL 帧经桥进出引擎，语音引擎班留口本班接线）。 */
     private var callHost: ControlledCallHost? = null
 
+    /** 被控端文件收宿主（文件垂直件接线 2026-11-19：CHUNK/FILE_META 帧进宿主，回执 FILE 路由回主控）。 */
+    private var fileHost: ControlledFileHost? = null
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -96,6 +101,7 @@ class ControlledSessionService : Service() {
         LinkLog.d(TAG, "被控监听 48190 start=$listenOk")
         startHeartbeatLoop()
         callHost = ControlledCallHost(this, { payload -> sendCallSignal(payload) }) { notifyIncomingCall() }
+        fileHost = ControlledFileHost(File(filesDir, "inbox"))
     }
 
     override fun onDestroy() {
@@ -103,6 +109,8 @@ class ControlledSessionService : Service() {
         server?.stop()
         callHost?.end()
         callHost = null
+        fileHost?.close()
+        fileHost = null
         executor.shutdownNow()
         super.onDestroy()
     }
@@ -213,6 +221,14 @@ class ControlledSessionService : Service() {
                 LinkLog.d(TAG, "收到通话信令 len=${frame.payload.size}")
                 val host = callHost
                 if (host == null) LinkLog.w(TAG, "通话宿主未就绪，信令丢弃") else host.onCallSignal(frame.payload)
+            }
+            FrameType.FILE_META -> if (frame.route == Route.FILE) {
+                val receipt = fileHost?.onFileMeta(frame.payload)
+                if (receipt != null) connection.send(Frame(Route.FILE, FrameType.ACK, frame.seq, receipt))
+            }
+            FrameType.CHUNK -> if (frame.route == Route.FILE) {
+                val receipt = fileHost?.onChunk(frame.payload)
+                if (receipt != null) connection.send(Frame(Route.FILE, FrameType.ACK, frame.seq, receipt))
             }
             else -> {
                 // 画面/文件通道由对位垂直实现接手，本班不透传不明帧

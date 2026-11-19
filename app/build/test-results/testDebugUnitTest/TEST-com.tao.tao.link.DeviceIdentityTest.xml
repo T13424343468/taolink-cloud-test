@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.tao.tao.link.DeviceIdentityTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-18T17:17:32.640Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-bdglhvl678" time="0.041">
+<testsuite name="com.tao.tao.link.DeviceIdentityTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-19T11:05:28.399Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-nmfwd6hffn" time="0.031">
   <properties/>
-  <testcase name="ownFingerprint_persistsUniqueId_acrossCalls" classname="com.tao.tao.link.DeviceIdentityTest" time="0.034"/>
+  <testcase name="ownFingerprint_persistsUniqueId_acrossCalls" classname="com.tao.tao.link.DeviceIdentityTest" time="0.025"/>
   <testcase name="ownFingerprint_blankDeviceName_rejected" classname="com.tao.tao.link.DeviceIdentityTest" time="0.002"/>
   <testcase name="ownFingerprint_hexIsSha256Length" classname="com.tao.tao.link.DeviceIdentityTest" time="0.002"/>
   <system-out><![CDATA[]]></system-out>

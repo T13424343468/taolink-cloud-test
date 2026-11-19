@@ -706,6 +706,9 @@ id blocking
 id bottom
 id btn_back_input
 id btn_call_entry
+id btn_call_hangup
+id btn_call_video
+id btn_call_voice
 id btn_connect_cancel
 id btn_connect_peer
 id btn_connect_recent
@@ -714,6 +717,8 @@ id btn_connecting_cancel
 id btn_controlled
 id btn_disconnect
 id btn_discover
+id btn_file_back
+id btn_file_pick
 id btn_files_entry
 id btn_help
 id btn_input_code
@@ -722,6 +727,9 @@ id btn_switch_role
 id btn_tip_ok
 id btn_view_screen
 id buttonPanel
+id call_local_view
+id call_remote_view
+id call_status
 id center_vertical
 id checkbox
 id checked
@@ -748,6 +756,8 @@ id edit_text_id
 id end
 id expand_activities_button
 id expanded_menu
+id file_status
+id file_title
 id first_tip
 id forever
 id fragment_container_view_tag
@@ -901,9 +911,12 @@ layout abc_search_view
 layout abc_select_dialog_material
 layout abc_tooltip
 layout activity_connecting
+layout activity_controlled_call
 layout activity_discover
+layout activity_file_transfer
 layout activity_main
 layout activity_manage
+layout activity_master_call
 layout activity_master_home
 layout activity_pair_code
 layout activity_pair_input
@@ -952,6 +965,10 @@ string abc_toolbar_collapse_description
 string accessibility_service_desc
 string androidx_startup
 string app_name
+string call_btn_hangup
+string call_btn_video
+string call_btn_voice
+string call_incoming_notify
 string call_notification_answer_action
 string call_notification_answer_video_action
 string call_notification_decline_action
@@ -959,6 +976,10 @@ string call_notification_hang_up_action
 string call_notification_incoming_text
 string call_notification_ongoing_text
 string call_notification_screening_text
+string call_permission_needed
+string call_session_not_ready
+string call_status_connected
+string call_status_ready
 string connecting_cancel
 string connecting_state_doing
 string connecting_state_done
@@ -973,6 +994,14 @@ string discover_none_hint
 string discover_same_wifi
 string discover_scanning
 string discover_title
+string file_back
+string file_pick
+string file_pick_failed
+string file_status_done
+string file_status_idle
+string file_status_sending
+string file_status_verify_failed
+string file_title
 string manage_call_entry
 string manage_cancel
 string manage_disconnect
@@ -1024,6 +1053,7 @@ string reconnect_next_relay
 string reconnect_title
 string reconnect_tried_lan
 string reconnect_trying_wan
+string resident_channel_name
 string resident_text
 string resident_title
 string role_controlled

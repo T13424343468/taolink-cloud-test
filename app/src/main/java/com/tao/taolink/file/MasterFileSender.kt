@@ -74,14 +74,14 @@ class MasterFileSender(
                     return
                 }
                 val read = readChunk(stream, buf, index, totalChunks - 1)
-                // 已读过的块参与整册哈希，保证发端哈希与真实文件一致
+                // 续传跳过的块也读到了，同样计入整册哈希（否则续传后哈希对不上，永远收不了班）
+                digest.update(buf, 0, read)
                 if (index < fromChunkIndex) {
                     index++
                     continue
                 }
                 val chunk = buf.copyOf(read)
-                digest.update(chunk)
-                val chunkPayload = chunkPayload(meta, index, totalChunks, read, chunk)
+                val chunkPayload = FileChunkCodec.encode(meta.name, index, totalChunks, chunk)
                 sendChunk(chunkPayload)
                 onProgress((index + 1) * 100 / totalChunks)
                 index++
@@ -94,39 +94,6 @@ class MasterFileSender(
         }
         LinkLog.d(TAG, "发送完成：${meta.name} $totalChunks 块")
     }
-
-    private fun chunkPayload(
-        meta: FileTransfer.Meta,
-        index: Int,
-        total: Int,
-        chunkLen: Int,
-        chunk: ByteArray,
-    ): ByteArray {
-        val header = buildString {
-            append("{\"name\":\"")
-            append(escape(meta.name))
-            append("\",\"index\":")
-            append(index)
-            append(",\"total\":")
-            append(total)
-            append(",\"chunkLen\":")
-            append(chunkLen)
-            append(",\"chunkSha256\":\"")
-            append(MessageDigest.getInstance("SHA-256").digest(chunk).joinToString("") { "%02x".format(it) })
-            append("\"}")
-        }
-        val headerBytes = header.toByteArray(Charsets.UTF_8)
-        val out = ByteArray(2 + headerBytes.size + chunk.size)
-        out[0] = (headerBytes.size ushr 8).toByte()
-        out[1] = headerBytes.size.toByte()
-        headerBytes.copyInto(out, 2)
-        chunk.copyInto(out, 2 + headerBytes.size)
-        return out
-    }
-
-    private fun escape(raw: String): String = raw
-        .replace("\\", "\\\\")
-        .replace("\"", "\\\"")
 
     private fun readChunk(stream: java.io.InputStream, buf: ByteArray, index: Int, lastIndex: Int): Int {
         if (index < lastIndex) {

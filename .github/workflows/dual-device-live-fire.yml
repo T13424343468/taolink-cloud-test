@@ -193,8 +193,34 @@ jobs:
           adb -s $ADB_CTRL shell pm grant com.tao.tao.link android.permission.RECORD_AUDIO 2>/dev/null || true
           adb -s $ADB_CTRL shell pm grant com.tao.tao.link android.permission.CAMERA 2>/dev/null || true
 
-          echo "== FILE: 应用侧文件发送/接收链路未接线（ManageActivity 文件入口为占位、被控端 CHUNK 帧未接处理），如实挂账不硬凑绿 =="
-          echo "FILE_LIVE_FIRE=PENDING_FILE_UI_WIRING" | tee file-live-fire.txt
+          echo "== FILE live fire =="
+          adb -s $ADB_HOST logcat -c; adb -s $ADB_CTRL logcat -c
+          # 文件实弹：内容确定性（第 i 字节 = (i*31+7) mod 256），1MB 跨 4 个 256KB 块；
+          # 期望哈希由流水线独立复算，收端落盘文件 run-as 拉回逐字节对账——三重硬闸
+          FILESIZE=1048576
+          python3 -c "
+import hashlib
+d=bytes((i*31+7)%256 for i in range($FILESIZE))
+print(hashlib.sha256(d).hexdigest())" > expected-file-sha.txt
+          cat expected-file-sha.txt
+          adb -s $ADB_HOST shell am start -n com.tao.tao.link/.ui.FileTransferActivity --es auto_file test-live-fire.bin --ei auto_file_size $FILESIZE
+          sleep 30
+          adb -s $ADB_HOST logcat -d > logcat-master-file.txt || true
+          adb -s $ADB_CTRL logcat -d > logcat-ctrl-file.txt || true
+          grep -c "文件发送完成" logcat-master-file.txt > file-send-count.txt || true
+          grep -icE "文件接收完成.*校验通过" logcat-ctrl-file.txt > file-ctrl-count.txt || true
+          cat file-send-count.txt file-ctrl-count.txt
+          adb -s $ADB_CTRL exec-out run-as com.tao.tao.link cat files/inbox/test-live-fire.bin > received-file.bin 2>/dev/null || true
+          ls -l received-file.bin || true
+          python3 -c "
+import hashlib
+print(hashlib.sha256(open('received-file.bin','rb').read()).hexdigest())" > received-file-sha.txt
+          cat received-file-sha.txt
+          SEND_OK=$( [ "$(cat file-send-count.txt)" -ge 1 ] && echo 1 || echo 0 )
+          CTRL_OK=$( [ "$(cat file-ctrl-count.txt)" -ge 1 ] && echo 1 || echo 0 )
+          SHA_OK=$( [ "$(cat expected-file-sha.txt)" = "$(cat received-file-sha.txt)" ] && echo 1 || echo 0 )
+          [ "$SEND_OK" = "1" ] && [ "$CTRL_OK" = "1" ] && [ "$SHA_OK" = "1" ] || { echo "FAIL_FILE_LIVE_FIRE"; exit 1; }
+          echo "PASS_FILE_LIVE_FIRE"
 
           echo "== VOICE live fire =="
           adb -s $ADB_HOST logcat -c; adb -s $ADB_CTRL logcat -c
@@ -244,6 +270,12 @@ jobs:
             logcat-*.txt
             audio-frame-count-master.txt
             video-frame-count-master.txt
+            file-send-count.txt
+            file-ctrl-count.txt
+            expected-file-sha.txt
+            received-file-sha.txt
+            logcat-master-file.txt
+            logcat-ctrl-file.txt
             emu-master.log
             emu-ctrl.log
             gradle-build.log

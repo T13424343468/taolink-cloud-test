@@ -24,7 +24,8 @@ enum class FrameType(val id: Int) {
     CHUNK(6),
     STATUS(7),
     CALL_SIGNAL(8),
-    ACK(9);
+    ACK(9),
+    FILE_META(10);
 
     companion object {
         fun fromId(id: Int): FrameType = entries.first { it.id == id }

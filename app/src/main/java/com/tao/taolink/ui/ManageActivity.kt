@@ -56,7 +56,13 @@ class ManageActivity : AppCompatActivity() {
             startActivity(Intent(this, MasterCallActivity::class.java))
         }
         findViewById<Button>(R.id.btn_files_entry).setOnClickListener {
-            // 文件互传归文件垂直件；入口在位
+            // 文件互传页：守门与通话入口同款，会话死了不进页（半开会话页不产）
+            val session = MasterSessionHolder.get()
+            if (session == null || !session.isRunning()) {
+                Toast.makeText(this, R.string.call_session_not_ready, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            startActivity(Intent(this, FileTransferActivity::class.java))
         }
     }
 

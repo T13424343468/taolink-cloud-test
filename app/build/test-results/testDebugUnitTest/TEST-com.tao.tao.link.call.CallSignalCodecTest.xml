@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.tao.tao.link.call.CallSignalCodecTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-18T17:17:32.904Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-bdglhvl678" time="0.012">
+<testsuite name="com.tao.tao.link.call.CallSignalCodecTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-19T11:05:28.615Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-nmfwd6hffn" time="0.024">
   <properties/>
-  <testcase name="parseSdp_garbagePayload_returnsNull" classname="com.tao.tao.link.call.CallSignalCodecTest" time="0.005"/>
+  <testcase name="videoCandidateRoundtrip_videoMid" classname="com.tao.tao.link.call.CallSignalCodecTest" time="0.014"/>
+  <testcase name="parseSdp_garbagePayload_returnsNull" classname="com.tao.tao.link.call.CallSignalCodecTest" time="0.001"/>
   <testcase name="parseCandidate_garbagePayload_returnsNull" classname="com.tao.tao.link.call.CallSignalCodecTest" time="0.0"/>
-  <testcase name="offerRoundtrip_intact" classname="com.tao.tao.link.call.CallSignalCodecTest" time="0.004"/>
+  <testcase name="videoSdpNotMisreadAsHangup" classname="com.tao.tao.link.call.CallSignalCodecTest" time="0.0"/>
+  <testcase name="offerRoundtrip_intact" classname="com.tao.tao.link.call.CallSignalCodecTest" time="0.006"/>
+  <testcase name="videoAnswerRoundtrip_notOffer" classname="com.tao.tao.link.call.CallSignalCodecTest" time="0.0"/>
   <testcase name="hangupFlag_andCrossTypeGuard" classname="com.tao.tao.link.call.CallSignalCodecTest" time="0.0"/>
-  <testcase name="candidateRoundtrip_intact" classname="com.tao.tao.link.call.CallSignalCodecTest" time="0.003"/>
+  <testcase name="candidateRoundtrip_intact" classname="com.tao.tao.link.call.CallSignalCodecTest" time="0.001"/>
   <testcase name="answerRoundtrip_intact" classname="com.tao.tao.link.call.CallSignalCodecTest" time="0.0"/>
+  <testcase name="videoOfferRoundtrip_mediaLineIntact" classname="com.tao.tao.link.call.CallSignalCodecTest" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>
