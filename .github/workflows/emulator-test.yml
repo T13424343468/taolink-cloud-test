@@ -376,3 +376,14 @@ jobs:
         run: |
           adb emu kill 2>/dev/null || true
           tail -150 emulator.log 2>/dev/null || echo NO_EMULATOR_LOG
+
+      - name: Red alert beacon
+        if: failure()
+        run: |
+          git config user.email "xiaoxue@taobus.local"
+          git config user.name "taolink-alert"
+          mkdir -p alerts
+          echo "workflow=${GITHUB_WORKFLOW} run=${GITHUB_RUN_ID} at=$(date -u +%FT%TZ)" > alerts/RED-${GITHUB_RUN_ID}.txt
+          git add alerts
+          git commit -q -m "ALERT RED run ${GITHUB_RUN_ID} ${GITHUB_WORKFLOW}" || exit 0
+          git push -q origin HEAD:refs/heads/alerts --force && echo BEACON_PUSHED
