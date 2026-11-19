@@ -3,7 +3,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#111111">
+    android:background="@color/gl_canvas">
 
     <org.webrtc.SurfaceViewRenderer
         android:id="@+id/call_remote_view"
@@ -22,7 +22,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:background="#66000000"
+        android:background="@color/gl_canvas_scrim"
         android:orientation="vertical"
         android:padding="12dp">
 
@@ -32,7 +32,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:text="@string/call_status_ready"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/gl_on_canvas"
             android:textSize="13sp" />
 
         <LinearLayout
@@ -48,7 +48,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/call_btn_voice"
-                android:textColor="#FFFFFF" />
+                android:textColor="@color/gl_on_canvas" />
 
             <Button
                 android:id="@+id/btn_call_video"
@@ -57,7 +57,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/call_btn_video"
-                android:textColor="#FFFFFF" />
+                android:textColor="@color/gl_on_canvas" />
 
             <Button
                 android:id="@+id/btn_call_hangup"
@@ -66,7 +66,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/call_btn_hangup"
-                android:textColor="#FF8A80" />
+                android:textColor="@color/gl_hangup" />
         </LinearLayout>
     </LinearLayout>
 </FrameLayout>

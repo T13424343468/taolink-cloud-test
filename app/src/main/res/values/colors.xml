@@ -23,4 +23,10 @@
     <color name="gl_ok">#4A7C59</color>
     <color name="gl_line">#E8E6E1</color>
     <color name="gl_edge">#1A1C1E21</color>
+
+    <!-- 画布专用令牌：视频通话画布双主题恒深（原型 v8 通话页口径），不放 night 覆盖 -->
+    <color name="gl_canvas">#111111</color>
+    <color name="gl_on_canvas">#FFFFFF</color>
+    <color name="gl_canvas_scrim">#66000000</color>
+    <color name="gl_hangup">#FF8A80</color>
 </resources>
