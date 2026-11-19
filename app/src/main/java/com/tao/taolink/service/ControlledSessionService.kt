@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import com.tao.tao.link.LinkLog
 import com.tao.tao.link.R
 import com.tao.tao.link.call.ControlledCallHost
 import com.tao.tao.link.control.AccessibilityControlExecutor
@@ -41,7 +42,11 @@ import java.util.concurrent.atomic.AtomicLong
  */
 class ControlledSessionService : Service() {
 
-    private val executor = Executors.newSingleThreadExecutor()
+    // 双机实弹 2026-11-19 定因：单线程池被心跳 while 循环永久占用，连接回调全部饿死（TCP 能通、HELLO 无人回）。
+    // 改多线程池：心跳循环占一线程，连接接入/帧处理/来电动作并行不互相卡死。
+    private val executor = Executors.newCachedThreadPool { r ->
+        Thread(r, "taolink-ctl").apply { isDaemon = true }
+    }
     private var server: SessionServer? = null
     private var heartbeatMonitor: HeartbeatMonitor? = null
     private var selfHealing: SelfHealingBackoff? = null
@@ -68,13 +73,15 @@ class ControlledSessionService : Service() {
             DeviceIdentity.ownFingerprint(filesDir, getString(R.string.default_device_name)),
         )
         server = SessionServer(SERVICE_PORT) { connection ->
+            LinkLog.d(TAG, "被控端收到连接 ${connection}")
             executor.execute {
                 activeConnection = connection
                 transitionTo(SessionState.DISCOVERED)
                 connection.startReading { frame -> executor.execute { handleFrame(connection, frame) } }
             }
         }
-        server?.start()
+        val listenOk = server?.start() == true
+        LinkLog.d(TAG, "被控监听 48190 start=$listenOk")
         startHeartbeatLoop()
         callHost = ControlledCallHost(this, { payload -> sendCallSignal(payload) }) { notifyIncomingCall() }
     }
@@ -112,27 +119,34 @@ class ControlledSessionService : Service() {
         manager.notify(INCOMING_CALL_NOTIFICATION_ID, notification)
     }
 
-    /** 心跳循环：应答对端心跳、监测超时；超时进自愈态，退避间隔按 HeartbeatPolicy 起步 1s 封顶 30s。 */
+    /** 心跳循环：应答对端心跳、监测超时；超时进自愈态，退避间隔按 HeartbeatPolicy 起步 1s 封顶 30s。
+     *  独立线程跑（双机实弹 2026-11-19 定因）：曾挂在单线程 executor 上，while 永久占线，
+     *  连接与帧处理回调全部排队饿死——被控端从不回帧，配对永远超时。 */
     private fun startHeartbeatLoop() {
         heartbeatMonitor = HeartbeatMonitor()
         selfHealing = SelfHealingBackoff()
-        executor.execute {
-            while (!executor.isShutdown) {
-                val monitor = heartbeatMonitor ?: break
-                val healing = selfHealing ?: break
-                if (monitor.isTimedOut()) {
-                    if (!monitor.isSelfHealing) {
-                        monitor.enterSelfHealing()
-                        transitionTo(SessionState.SELF_HEALING)
+        heartbeatRunning.set(true)
+        Thread({
+            while (heartbeatRunning.get()) {
+                try {
+                    val monitor = heartbeatMonitor ?: break
+                    val healing = selfHealing ?: break
+                    if (monitor.isTimedOut()) {
+                        if (!monitor.isSelfHealing) {
+                            monitor.enterSelfHealing()
+                            transitionTo(SessionState.SELF_HEALING)
+                        }
+                        // 自愈期静默等待对端重连；对端心跳再次闻到即退出自愈（HeartbeatMonitor.onPeerHeartbeat）
+                        Thread.sleep(healing.nextDelayMs())
+                    } else {
+                        healing.reset()
+                        Thread.sleep(HeartbeatPolicy.INTERVAL_MS)
                     }
-                    // 自愈期静默等待对端重连；对端心跳再次闻到即退出自愈（HeartbeatMonitor.onPeerHeartbeat）
-                    Thread.sleep(healing.nextDelayMs())
-                } else {
-                    healing.reset()
-                    Thread.sleep(HeartbeatPolicy.INTERVAL_MS)
+                } catch (e: InterruptedException) {
+                    break
                 }
             }
-        }
+        }, "taolink-heartbeat").apply { isDaemon = true; start() }
     }
 
     private fun transitionTo(next: SessionState) {
@@ -164,6 +178,7 @@ class ControlledSessionService : Service() {
             }
             FrameType.HELLO -> {
                 // 握手契约（协议 §2-2）：明文 HELLO 交换指纹，主控端等本端回同型帧；不回则对端永久阻塞
+                LinkLog.d(TAG, "收到 HELLO，回本端指纹")
                 val own = DeviceIdentity.ownFingerprint(filesDir, getString(R.string.default_device_name))
                 val hello = JsonText.obj(
                     JsonText.field("v", PROTOCOL_VERSION),
@@ -200,7 +215,12 @@ class ControlledSessionService : Service() {
             System.currentTimeMillis(),
         )
         transitionTo(SessionState.PAIRING)
-        if (confirm != null) connectedPeerFingerprintHex = parts[2]
+        if (confirm != null) {
+            LinkLog.d(TAG, "配对码校验通过，回 PAIR_CONFIRM")
+            connectedPeerFingerprintHex = parts[2]
+        } else {
+            LinkLog.w(TAG, "配对码校验失败（码错或过期），回拒")
+        }
         return confirm?.toByteArray(Charsets.UTF_8) ?: PAIR_REJECT
     }
 
@@ -220,6 +240,8 @@ class ControlledSessionService : Service() {
     }
 
     companion object {
+        private const val TAG = "ControlledSession"
+
         const val SERVICE_PORT = 48190
         private const val CHANNEL_ID = "taolink_resident"
         private const val NOTIFICATION_ID = 48190
