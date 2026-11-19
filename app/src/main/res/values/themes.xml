@@ -1,9 +1,13 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- R2 系统栏让位（主题层统一处理，不逐页硬编码）：targetSdk 35 强制全屏延伸（edge-to-edge），
+         12 页在此一处关闭强制延伸，恢复系统按 statusBarColor 涂栏、内容不压状态栏与手势条的旧口径。
+         后续随 R3 瓷釉重做若要走“延伸+Insets 让位”路线，改这一处即可。 -->
     <style name="Theme.TaoLink" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowBackground">@color/brand_bg</item>
         <item name="android:statusBarColor">@color/brand_bg</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="colorPrimary">@color/brand_accent</item>
         <item name="colorAccent">@color/brand_accent</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
     </style>
 </resources>
