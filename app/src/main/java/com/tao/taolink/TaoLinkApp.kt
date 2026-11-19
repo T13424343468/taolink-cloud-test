@@ -17,5 +17,21 @@ class TaoLinkApp : Application() {
                 else -> Log.i("TaoLink/$tag", message)
             }
         }
+        installCrashCatcher()
+    }
+
+    /** 崩溃自录：真机闪退时把堆栈落盘 filesDir/crash_last.txt，供取证定因（云测模拟器跑不到真机 API 病）。 */
+    private fun installCrashCatcher() {
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            runCatching {
+                val trace = android.util.Log.getStackTraceString(throwable)
+                java.io.File(filesDir, "crash_last.txt").writeText(
+                    "thread=${thread.name}\n" + java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US)
+                        .format(java.util.Date()) + "\n" + trace,
+                )
+            }
+            previous?.uncaughtException(thread, throwable)
+        }
     }
 }

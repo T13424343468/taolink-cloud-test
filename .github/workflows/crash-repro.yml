@@ -1,0 +1,161 @@
+name: crash-repro
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# 目标：在高于云测 android-31 的系统镜像（android-35）上复现真机闪退：
+# 直启 PairCodeActivity / ControlledSessionService + 主页"让人帮"按钮坐标点击，
+# 抓 FATAL EXCEPTION 与 crash_last.txt 自录堆栈，取证定因。
+jobs:
+  repro:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      ADB_DEV: emulator-5554
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Host probe
+        run: |
+          nproc; free -h; ls -l /dev/kvm || echo NO_KVM
+          if [ ! -e /dev/kvm ]; then echo "FAIL_NO_KVM"; exit 1; fi
+          sudo chmod 666 /dev/kvm
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK
+        run: |
+          ANDROID_HOME=$RUNNER_TEMP/android-sdk
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          curl -sSL -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q cmdline-tools.zip -d $ANDROID_HOME/cmdline-tools
+          mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+          export ANDROID_SDK_ROOT=$ANDROID_HOME
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/emulator" >> $GITHUB_PATH
+
+      - name: Build debug APK
+        run: |
+          gradle assembleDebug --no-daemon > gradle-build.log 2>&1 || { tail -40 gradle-build.log; exit 1; }
+          ls -l app/build/outputs/apk/debug/*.apk
+
+      - name: Create AVD (android-35)
+        run: |
+          export ANDROID_AVD_HOME=$HOME/.android/avd
+          export ANDROID_USER_HOME=$HOME/.android
+          mkdir -p "$ANDROID_AVD_HOME"
+          echo no | avdmanager create avd -n tlr -k "system-images;android-35;google_apis;x86_64" || exit 1
+          CFG=$ANDROID_AVD_HOME/tlr.avd/config.ini
+          sed -i 's|^hw.gpu.enabled=.*|hw.gpu.enabled=no|' "$CFG" 2>/dev/null || echo 'hw.gpu.enabled=no' >> "$CFG"
+          echo 'hw.gpu.mode=off' >> "$CFG"
+          echo 'hw.ramSize=2048' >> "$CFG"
+
+      - name: Boot emulator
+        run: |
+          export ANDROID_AVD_HOME=$HOME/.android/avd
+          export ANDROID_USER_HOME=$HOME/.android
+          "$ANDROID_HOME/emulator/emulator" -avd tlr -port 5554 -no-window -no-boot-anim -gpu off > emu-repro.log 2>&1 &
+          OK=0
+          for i in $(seq 1 60); do
+            BOOT=$(adb -s emulator-5554 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+            if [ "$BOOT" = "1" ]; then OK=1; echo "BOOT_OK"; break; fi
+            sleep 10
+          done
+          [ "$OK" = "1" ] || { echo "FAIL_BOOT"; tail -30 emu-repro.log; exit 1; }
+          adb -s $ADB_DEV shell getprop ro.build.version.sdk > device-api.txt || true
+          cat device-api.txt
+
+      - name: Install and grant
+        run: |
+          APK=app/build/outputs/apk/debug/$(ls app/build/outputs/apk/debug/ | grep '\.apk$' | head -1)
+          adb -s $ADB_DEV install -r "$APK" || exit 1
+          adb -s $ADB_DEV shell pm grant com.tao.tao.link android.permission.POST_NOTIFICATIONS 2>/dev/null || true
+          adb -s $ADB_DEV shell pm grant com.tao.tao.link android.permission.CAMERA 2>/dev/null || true
+          adb -s $ADB_DEV shell pm grant com.tao.tao.link android.permission.RECORD_AUDIO 2>/dev/null || true
+          echo INSTALL_OK
+
+      - name: "Repro 1 - launch MainActivity, tap the 让人帮 button"
+        run: |
+          dump() { adb -s $ADB_DEV shell uiautomator dump /data/local/tmp/u.xml >/dev/null 2>&1 && adb -s $ADB_DEV pull /data/local/tmp/u.xml "$1" >/dev/null 2>&1; }
+          adb -s $ADB_DEV logcat -c
+          adb -s $ADB_DEV shell am start -n com.tao.tao.link/.ui.MainActivity; sleep 12
+          dump ui-main-35.xml || true
+          cat ui-main-35.xml 2>/dev/null | grep -o 'text="[^"]*"' | sort -u || true
+          LINE=$(grep -o "<node[^>]*text=\"让人帮\"[^>]*>" ui-main-35.xml 2>/dev/null | grep -o 'bounds="\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]"' | head -1) || true
+          if [ -n "$LINE" ]; then
+            NUMS=$(echo "$LINE" | grep -oE '\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]' | head -1 | tr -d '[]')
+            X1=$(echo "$NUMS"|cut -d, -f1);Y1=$(echo "$NUMS"|cut -d, -f2);X2=$(echo "$NUMS"|cut -d, -f3);Y2=$(echo "$NUMS"|cut -d, -f4)
+            adb -s $ADB_DEV shell input tap $(( (X1+X2)/2 )) $(( (Y1+Y2)/2 ))
+            echo TAP_DONE
+          else
+            echo TAP_MISS_BUT_CONTINUE
+          fi
+          sleep 10
+          adb -s $ADB_DEV shell 'logcat -d' > logcat-step1.txt 2>&1 || true
+          adb -s $ADB_DEV shell 'logcat -b crash -d' > crash-buffer-step1.txt 2>&1 || true
+          adb -s $ADB_DEV exec-out run-as com.tao.tao.link cat files/crash_last.txt > crash_last-step1.txt 2>/dev/null || true
+          echo "== crash_last step1 =="; cat crash_last-step1.txt || true
+          grep -c "FATAL EXCEPTION" logcat-step1.txt || true
+
+      - name: "Repro 2 - direct start ControlledSessionService and PairCodeActivity"
+        run: |
+          adb -s $ADB_DEV shell am start-foreground-service -n com.tao.tao.link/.service.ControlledSessionService || true
+          sleep 5
+          adb -s $ADB_DEV shell am start -n com.tao.tao.link/.ui.PairCodeActivity || true
+          sleep 10
+          adb -s $ADB_DEV shell 'logcat -d' > logcat-step2.txt 2>&1 || true
+          adb -s $ADB_DEV shell 'logcat -b crash -d' > crash-buffer-step2.txt 2>&1 || true
+          adb -s $ADB_DEV exec-out run-as com.tao.tao.link cat files/crash_last.txt > crash_last-step2.txt 2>/dev/null || true
+          echo "== crash_last step2 =="; cat crash_last-step2.txt || true
+          CRASH=0
+          grep -q "FATAL EXCEPTION" logcat-step1.txt 2>/dev/null && CRASH=1
+          grep -q "FATAL EXCEPTION" logcat-step2.txt 2>/dev/null && CRASH=1
+          [ -s crash_last-step1.txt ] && CRASH=1
+          [ -s crash_last-step2.txt ] && CRASH=1
+          if [ "$CRASH" = "1" ]; then
+            echo "REPRO_CRASH_CONFIRMED"
+            exit 1
+          fi
+          echo "REPRO_NO_CRASH_ON_ANDROID_35"
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crash-repro-evidence
+          path: |
+            ui-main-35.xml
+            device-api.txt
+            logcat-step1.txt
+            logcat-step2.txt
+            crash-buffer-step1.txt
+            crash-buffer-step2.txt
+            crash_last-step1.txt
+            crash_last-step2.txt
+            emu-repro.log
+            gradle-build.log
+          if-no-files-found: warn
+
+      - name: Red alert beacon
+        if: failure()
+        run: |
+          git config user.email "xiaoxue@taobus.local"
+          git config user.name "taolink-alert"
+          mkdir -p alerts
+          echo "workflow=crash-repro run=${GITHUB_RUN_ID} at=$(date -u +%FT%TZ)" > alerts/RED-crash-repro-${GITHUB_RUN_ID}.txt
+          git add alerts
+          git commit -q -m "ALERT crash-repro run ${GITHUB_RUN_ID}" || exit 0
+          git push -q origin HEAD:refs/heads/alerts --force && echo BEACON_PUSHED
