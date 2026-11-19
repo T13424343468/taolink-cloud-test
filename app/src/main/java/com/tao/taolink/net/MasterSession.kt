@@ -301,10 +301,14 @@ class MasterSession(
                     ackTracker.onAck(acked)
                 }
             }
+            FrameType.CALL_SIGNAL ->
+                when (frame.route) {
+                    Route.AUDIO -> onCallSignal?.invoke(frame.payload)
+                    else -> LinkLog.d(TAG, "帧暂未处理 route=${frame.route}")
+                }
             FrameType.CHUNK ->
                 when (frame.route) {
                     Route.SCREEN -> onScreenFrame?.invoke(frame.payload)
-                    Route.AUDIO -> if (frame.type == FrameType.CALL_SIGNAL) onCallSignal?.invoke(frame.payload)
                     else -> LinkLog.d(TAG, "帧暂未处理 route=${frame.route}")
                 }
             else -> LinkLog.d(TAG, "帧暂未处理 route=${frame.route} type=${frame.type}")
