@@ -302,8 +302,16 @@ jobs:
           adb shell uiautomator dump /data/local/tmp/ui.xml >/dev/null 2>&1 && adb pull /data/local/tmp/ui.xml ui-adversarial.xml || true
           grep -q "输配对码" ui-adversarial.xml 2>/dev/null && ON_INPUT_SCREEN=1 || ON_INPUT_SCREEN=0
           echo "ON_INPUT_SCREEN=$ON_INPUT_SCREEN"
+          if [ "$ON_INPUT_SCREEN" != "1" ]; then
+            echo "FALLBACK_DIRECT_LAUNCH_PAIR_INPUT"
+            adb shell am start -n com.tao.tao.link/.ui.PairInputActivity >/dev/null 2>&1 || true
+            sleep 5
+            adb shell uiautomator dump /data/local/tmp/ui.xml >/dev/null 2>&1 && adb pull /data/local/tmp/ui.xml ui-adversarial.xml || true
+            grep -q "输配对码" ui-adversarial.xml 2>/dev/null && ON_INPUT_SCREEN=1 || ON_INPUT_SCREEN=0
+            echo "ON_INPUT_SCREEN_AFTER_FALLBACK=$ON_INPUT_SCREEN"
+          fi
           adb shell input text "$(python3 -c "print('A'*800)")" || echo "LONG_INPUT_REJECTED"
-          adb shell input text "abc'"'"';%sDROP%sTABLE%s--" || true
+          adb shell input text 'abc'"'"';%sDROP%sTABLE%s--' || true
           adb shell input text "<script>alert(1)</script>" || true
           adb shell input text "＃＄％＆＇（）＊＋～" || true
           for i in 1 2 3 4 5 6 7 8 9 10; do adb shell input tap 540 1200 || true; done
