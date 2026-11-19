@@ -284,6 +284,8 @@ class MasterSession(
     }
 
     private fun dispatch(frame: Frame) {
+        // 对端能送进任何一帧，链路即活：喂狗不绑单一回执格式（STATUS/ACK/心跳都算数）
+        monitor.onPeerHeartbeat()
         when (frame.type) {
             FrameType.HEARTBEAT -> {
                 monitor.onPeerHeartbeat()
@@ -311,7 +313,22 @@ class MasterSession(
 
     private fun tickLoop() {
         while (running.get()) {
-            val now = clock()
+            try {
+                tickOnce()
+            } catch (e: Exception) {
+                // 看门狗线程不许带崩进程：单轮异常记日志下轮再来（双机实弹 2026-11-19 教训）
+                LinkLog.w(TAG, "tick 单轮异常：${e.message}")
+            }
+            try {
+                Thread.sleep(TICK_INTERVAL_MS)
+            } catch (e: InterruptedException) {
+                return
+            }
+        }
+    }
+
+    private fun tickOnce() {
+        val now = clock()
             // 1) 心跳：到点即发（载荷 = 本端状态捎带，StatusChannel 契约）
             if ((state == SessionState.CONNECTED || state == SessionState.CONTROLLING) &&
                 now - lastHeartbeatSentMs >= HeartbeatPolicy.INTERVAL_MS
@@ -328,14 +345,8 @@ class MasterSession(
                 lastReconnectAttemptMs = now
                 attemptReconnect()
             }
-            // 4) 指令回执：超时重发不重放
-            ackTracker.tick()
-            try {
-                Thread.sleep(TICK_INTERVAL_MS)
-            } catch (e: InterruptedException) {
-                return
-            }
-        }
+        // 4) 指令回执：超时重发不重放
+        ackTracker.tick()
     }
 
     private fun attemptReconnect() {
@@ -356,8 +367,9 @@ class MasterSession(
             closeSocketQuietly(connected)
             return
         }
-        // 重连免输码：内存密钥仍在（密钥不落盘口径），发加密心跳验证同钥
-        secured.set(true)
+        // 重连免输码：内存密钥仍在（密钥不落盘口径）。
+        // 0.2.4 口径：密钥派生留后续班（被控端解密层未落位），会话保持明文帧；
+        // 此前此处 secured.set(true) 后发加密心跳，密钥未派生掷异常杀进程（双机实弹 2026-11-19 定因）。
         startThreads(connected)
         connected.soTimeout = 0
         sendFrame(Route.CONTROL, FrameType.HEARTBEAT, StatusCodec.encode(statusSnapshot()))
