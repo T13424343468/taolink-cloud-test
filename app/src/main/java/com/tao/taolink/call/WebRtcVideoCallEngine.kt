@@ -148,13 +148,15 @@ class WebRtcVideoCallEngine(
         try { cameraCapturer?.dispose() } catch (_: Exception) {}
         try { surfaceHelper?.dispose() } catch (_: Exception) {}
         try { videoSource?.dispose() } catch (_: Exception) {}
-        try { peerConnection?.close() } catch (_: Exception) {}
+        // 先摘账再关闸：pc.close() 若同步回调 onHangup 重入 end()，账已空防原生层双重 close（云跑实弹 2026-11-19 教训）
+        val pc = peerConnection
+        peerConnection = null
+        try { pc?.close() } catch (_: Exception) {}
         try { audioSource?.dispose() } catch (_: Exception) {}
         cameraCapturer = null
         surfaceHelper = null
         videoSource = null
         localVideoTrack = null
-        peerConnection = null
         audioSource = null
         localAudioTrack = null
         LinkLog.d(TAG, "视频引擎已释放")

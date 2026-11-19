@@ -27,6 +27,9 @@ class MasterCallChannel(
     private var voiceEngine: WebRtcVoiceEngine? = null
     private var videoEngineRef: WebRtcVideoCallEngine? = null
 
+    /** 结算重入闸：pc.close() 会同步回调 onHangup 重入 end()，二次 close 原生层要炸（云跑实弹 2026-11-19 实锤进程被杀）。 */
+    private val settling = java.util.concurrent.atomic.AtomicBoolean(false)
+
     /** 通话页绑定视频画面的轨回调（启动引擎前注入；轨与渲染上下文成对交付）。 */
     var onLocalVideoReady: ((org.webrtc.VideoTrack, org.webrtc.EglBase.Context) -> Unit)? = null
     var onRemoteVideoReady: ((org.webrtc.VideoTrack, org.webrtc.EglBase.Context) -> Unit)? = null
@@ -108,23 +111,28 @@ class MasterCallChannel(
     }
 
     override fun end() {
-        val ended = onCallEnded
-        if (liveCall === this) liveCall = null // 结算先摘注册口，防挂完后路由到死信道
-        // 挂断必须出网告知对端：只拆自己会让对端引擎永不知情、占线假死（第六处跨端契约病）
-        if (voiceEngine != null || videoEngineRef != null) {
-            try { sendSignal?.invoke(CallSignalCodec.encodeHangup()) } catch (_: Exception) {}
+        if (!settling.compareAndSet(false, true)) return // 重入闸：结算中的 end() 直接落空
+        try {
+            val ended = onCallEnded
+            if (liveCall === this) liveCall = null // 结算先摘注册口，防挂完后路由到死信道
+            // 挂断必须出网告知对端：只拆自己会让对端引擎永不知情、占线假死（第六处跨端契约病）
+            if (voiceEngine != null || videoEngineRef != null) {
+                try { sendSignal?.invoke(CallSignalCodec.encodeHangup()) } catch (_: Exception) {}
+            }
+            voiceEngine?.end()
+            voiceEngine = null
+            videoEngineRef?.end()
+            videoEngineRef = null
+            onLocalVideoReady = null
+            onRemoteVideoReady = null
+            onCallEnded = null
+            state = CallState.IDLE
+            degraded = false
+            quality = CallChannel.Quality(VIDEO_FPS_BASE, AUDIO_KBPS_BASE)
+            ended?.invoke() // 结算完再通知 UI 退场（避免 UI 在半结算态抢先释放）
+        } finally {
+            settling.set(false) // 账已清，后续 end() 是无害空转
         }
-        voiceEngine?.end()
-        voiceEngine = null
-        videoEngineRef?.end()
-        videoEngineRef = null
-        onLocalVideoReady = null
-        onRemoteVideoReady = null
-        onCallEnded = null
-        state = CallState.IDLE
-        degraded = false
-        quality = CallChannel.Quality(VIDEO_FPS_BASE, AUDIO_KBPS_BASE)
-        ended?.invoke() // 结算完再通知 UI 退场（避免 UI 在半结算态抢先释放）
     }
 
     override fun degradeVideo() {

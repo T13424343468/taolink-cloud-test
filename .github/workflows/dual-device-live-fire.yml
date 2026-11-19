@@ -210,6 +210,9 @@ jobs:
           [ "$START_OK" = "1" ] && [ "$CTRL_OK" = "1" ] || { echo "FAIL_VOICE_LIVE_FIRE"; exit 1; }
           echo "PASS_VOICE_LIVE_FIRE"
           adb -s $ADB_HOST shell am start -n com.tao.tao.link/.ui.MasterCallActivity --es auto_call hangup; sleep 5
+          adb -s $ADB_HOST logcat -d > logcat-master-after-hangup.txt || true
+          adb -s $ADB_HOST shell 'logcat -b crash -d' > logcat-master-crash.txt || true
+          adb -s $ADB_CTRL logcat -d > logcat-ctrl-after-hangup.txt || true
 
           echo "== VIDEO live fire =="
           adb -s $ADB_HOST logcat -c; adb -s $ADB_CTRL logcat -c

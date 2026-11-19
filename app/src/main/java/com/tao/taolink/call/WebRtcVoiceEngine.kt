@@ -97,9 +97,11 @@ class WebRtcVoiceEngine(
     }
 
     fun end() {
-        try { peerConnection?.close() } catch (_: Exception) {}
-        try { audioSource?.dispose() } catch (_: Exception) {}
+        // 先摘账再关闸：pc.close() 若同步回调 onHangup 重入 end()，账已空防原生层双重 close（云跑实弹 2026-11-19 教训）
+        val pc = peerConnection
         peerConnection = null
+        try { pc?.close() } catch (_: Exception) {}
+        try { audioSource?.dispose() } catch (_: Exception) {}
         audioSource = null
         localAudioTrack = null
         remoteAudioReceived = false
