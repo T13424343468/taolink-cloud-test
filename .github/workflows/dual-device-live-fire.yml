@@ -181,6 +181,7 @@ jobs:
           else
             echo "FAIL_PAIR_NOT_CONNECTED"
             echo "SKIP_LIVE_FIRE=1" >> $GITHUB_ENV
+            exit 1
           fi
 
       - name: "Stage D - live fire, file transfer, voice, video"
