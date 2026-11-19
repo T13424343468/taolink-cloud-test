@@ -22,10 +22,15 @@
     <string name="master_first_tip_ok">知道了</string>
     <string name="master_empty_recent">还没有连过设备。先在附近找一台，或输配对码连接。</string>
 
-    <string name="discover_title">在附近找设备</string>
-    <string name="discover_scanning">正在扫描同一 WiFi 下的设备…</string>
+    <string name="discover_title">附近的设备</string>
+    <string name="discover_subtitle">同一 WiFi 下正在广播的被控端</string>
+    <string name="discover_scanning">正在找附近的设备…</string>
     <string name="discover_same_wifi">同一 WiFi</string>
-    <string name="discover_none_hint">没看到想帮的设备？让对家打开 TaoLink 选「让人帮」，或直接输配对码。</string>
+    <string name="discover_none_hint">附近还没开「让人帮」\n让对方打开 TaoLink，这里就会出现</string>
+    <string name="discover_fail_title">找不到设备</string>
+    <string name="discover_fail_reason">可能不在同一 WiFi，或对方已关广播</string>
+    <string name="discover_retry">重试</string>
+    <string name="discover_fail_footer">还不行？检查附近设备权限，或改用配对码连接</string>
     <string name="discover_back_input">输配对码连接</string>
 
     <string name="pair_input_title">输入配对码</string>

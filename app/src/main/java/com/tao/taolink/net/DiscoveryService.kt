@@ -11,7 +11,8 @@ interface DiscoveryService {
         val supportsController: Boolean,
     )
 
-    fun startBrowsing(onFound: (DiscoveredPeer) -> Unit)
+    /** onError：发现启动失败回调（R4 失败态触发源），errorCode 为平台原始错误码。 */
+    fun startBrowsing(onFound: (DiscoveredPeer) -> Unit, onError: ((Int) -> Unit)? = null)
 
     fun stopBrowsing()
 }

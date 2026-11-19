@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 附近设备（定稿原型 v2 s-discover / s-discover-empty） -->
+<!-- 附近设备（原型 v8 s-discover 四态定稿）：找到/加载/空/失败，状态切换由 DiscoverActivity 状态机控制 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -16,39 +16,107 @@
         android:textStyle="bold" />
 
     <TextView
-        android:id="@+id/discover_scanning"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="@string/discover_scanning"
-        android:textColor="@color/brand_text_sub"
+        android:layout_marginTop="4dp"
+        android:text="@string/discover_subtitle"
+        android:textColor="@color/gl_ink3"
         android:textSize="12sp" />
 
+    <!-- 加载态 -->
+    <TextView
+        android:id="@+id/discover_loading"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_card"
+        android:elevation="2dp"
+        android:gravity="center"
+        android:padding="28dp"
+        android:text="@string/discover_scanning"
+        android:textColor="@color/brand_text_sub"
+        android:textSize="13sp" />
+
+    <!-- 找到态：设备列表 -->
     <LinearLayout
         android:id="@+id/discover_list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="16dp"
         android:background="@drawable/bg_card"
         android:elevation="2dp"
         android:orientation="vertical"
         android:paddingLeft="16dp"
         android:paddingRight="16dp" />
 
+    <!-- 空态：真没找到不装死 -->
     <TextView
         android:id="@+id/discover_empty_hint"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_card"
+        android:elevation="2dp"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
+        android:padding="28dp"
         android:text="@string/discover_none_hint"
-        android:textColor="@color/gl_ink3"
-        android:textSize="12sp" />
+        android:textColor="@color/brand_text_sub"
+        android:textSize="13sp" />
+
+    <!-- 失败态：三段式（结论+原因+出口）+ 重试 -->
+    <LinearLayout
+        android:id="@+id/discover_fail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_card"
+        android:elevation="2dp"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/discover_fail_title"
+            android:textColor="@color/brand_text"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center"
+            android:text="@string/discover_fail_reason"
+            android:textColor="@color/brand_text_sub"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/btn_discover_retry"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="@string/discover_retry" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="@string/discover_fail_footer"
+            android:textColor="@color/gl_ink3"
+            android:textSize="12sp" />
+    </LinearLayout>
 
     <Button
         android:id="@+id/btn_back_input"
         style="@style/Widget.AppCompat.Button.ButtonBar.AlertDialog"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
         android:text="@string/discover_back_input" />
 </LinearLayout>

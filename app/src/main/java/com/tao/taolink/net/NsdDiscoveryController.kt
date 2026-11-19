@@ -19,7 +19,7 @@ class NsdDiscoveryController(context: Context) : DiscoveryService {
     private var registrationListener: NsdManager.RegistrationListener? = null
     private val resolving = HashSet<String>()
 
-    override fun startBrowsing(onFound: (DiscoveryService.DiscoveredPeer) -> Unit) {
+    override fun startBrowsing(onFound: (DiscoveryService.DiscoveredPeer) -> Unit, onError: ((Int) -> Unit)?) {
         if (discoveryListener != null) return
         val listener = object : NsdManager.DiscoveryListener {
             override fun onDiscoveryStarted(serviceType: String) {
@@ -29,6 +29,7 @@ class NsdDiscoveryController(context: Context) : DiscoveryService {
             override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
                 LinkLog.w(TAG, "发现启动失败：$serviceType err=$errorCode")
                 discoveryListener = null
+                onError?.invoke(errorCode)
             }
 
             override fun onServiceLost(serviceInfo: NsdServiceInfo) {
