@@ -107,6 +107,10 @@ class MasterCallChannel(
 
     override fun end() {
         val ended = onCallEnded
+        // 挂断必须出网告知对端：只拆自己会让对端引擎永不知情、占线假死（第六处跨端契约病）
+        if (voiceEngine != null || videoEngineRef != null) {
+            try { sendSignal?.invoke(CallSignalCodec.encodeHangup()) } catch (_: Exception) {}
+        }
         voiceEngine?.end()
         voiceEngine = null
         videoEngineRef?.end()

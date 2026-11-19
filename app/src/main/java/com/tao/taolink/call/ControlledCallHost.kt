@@ -63,6 +63,10 @@ class ControlledCallHost(
     }
 
     fun end() {
+        // 挂断必须出网告知对端：只拆自己会让主控端引擎永不知情（同第六处跨端契约病）
+        if (engine != null) {
+            try { sendSignal(CallSignalCodec.encodeHangup()) } catch (_: Exception) {}
+        }
         engine?.end()
         engine = null
         clearSnapshots()
