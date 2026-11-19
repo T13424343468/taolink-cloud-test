@@ -16,6 +16,7 @@ class NsdDiscoveryController(context: Context) : DiscoveryService {
 
     private val nsdManager = context.getSystemService(Context.NSD_SERVICE) as NsdManager
     private var discoveryListener: NsdManager.DiscoveryListener? = null
+    private var registrationListener: NsdManager.RegistrationListener? = null
     private val resolving = HashSet<String>()
 
     override fun startBrowsing(onFound: (DiscoveryService.DiscoveredPeer) -> Unit) {
@@ -76,8 +77,9 @@ class NsdDiscoveryController(context: Context) : DiscoveryService {
         discoveryListener = null
     }
 
-    /** 本端作为对端口播：声明设备名、角色支持位与监听端口。 */
+    /** 本端作为对端口播：声明设备名、角色支持位与监听端口。服务停必随 unregister() 撤播（R1 验收：对端列表 30 秒内消失）。 */
     fun register(deviceName: String, supportsController: Boolean, supportsControlled: Boolean, port: Int) {
+        if (registrationListener != null) return
         val info = NsdServiceInfo().apply {
             serviceName = deviceName
             serviceType = SERVICE_TYPE
@@ -85,21 +87,33 @@ class NsdDiscoveryController(context: Context) : DiscoveryService {
             setAttribute(TXT_VER, PROTOCOL_VERSION.toString())
             setAttribute(TXT_ROLES, rolesValue(supportsController, supportsControlled))
         }
-        nsdManager.registerService(info, NsdManager.PROTOCOL_DNS_SD, object : NsdManager.RegistrationListener {
+        val listener = object : NsdManager.RegistrationListener {
             override fun onServiceRegistered(serviceInfo: NsdServiceInfo) {
                 LinkLog.d(TAG, "口播已注册：${serviceInfo.serviceName}")
             }
 
             override fun onRegistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
+                registrationListener = null
                 LinkLog.w(TAG, "口播注册失败：${serviceInfo.serviceName} err=$errorCode")
             }
 
-            override fun onServiceUnregistered(serviceInfo: NsdServiceInfo) = Unit
+            override fun onServiceUnregistered(serviceInfo: NsdServiceInfo) {
+                registrationListener = null
+            }
 
             override fun onUnregistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
                 LinkLog.w(TAG, "口播注销失败：${serviceInfo.serviceName} err=$errorCode")
             }
-        })
+        }
+        registrationListener = listener
+        nsdManager.registerService(info, NsdManager.PROTOCOL_DNS_SD, listener)
+    }
+
+    /** 服务停或退出「让人帮」时撤播：对端发现列表随之消失（NSD service-lost，不超 30 秒）。 */
+    fun unregister() {
+        val listener = registrationListener ?: return
+        registrationListener = null
+        nsdManager.unregisterService(listener)
     }
 
     private fun toPeer(info: NsdServiceInfo): DiscoveryService.DiscoveredPeer? {

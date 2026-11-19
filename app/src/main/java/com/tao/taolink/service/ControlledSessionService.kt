@@ -15,6 +15,7 @@ import com.tao.tao.link.call.ControlledCallHost
 import com.tao.tao.link.control.AccessibilityControlExecutor
 import com.tao.tao.link.control.ControlDispatcher
 import com.tao.tao.link.file.ControlledFileHost
+import com.tao.tao.link.net.NsdDiscoveryController
 import com.tao.tao.link.protocol.DeviceFingerprint
 import com.tao.tao.link.protocol.DeviceIdentity
 import com.tao.tao.link.protocol.Frame
@@ -61,6 +62,9 @@ class ControlledSessionService : Service() {
     private var pairingResponder: PairingResponder? = null
     private var activeConnection: SessionConnection? = null
 
+    /** 局域网口播控制器（R1）：随服务生命周期注册/注销，双端共用一件（契约 #1）。 */
+    private val nsdController by lazy { NsdDiscoveryController(this) }
+
     /** 最近连接的对端指纹（配对确认后记，连接回填用；Y4 拍板）。 */
     @Volatile
     private var connectedPeerFingerprintHex: String? = null
@@ -99,6 +103,14 @@ class ControlledSessionService : Service() {
         }
         val listenOk = server?.start() == true
         LinkLog.d(TAG, "被控监听 48190 start=$listenOk")
+        // R1 发现接线修复（原病：NsdDiscoveryController.register 零调用点，被控端从不口播，搜索永远空手）：
+        // 服务起即对外广播自己（设备名+角色+端口），搜索页才真的能看到对家；服务停 onDestroy 撤播。
+        nsdController.register(
+            deviceName = getString(R.string.default_device_name),
+            supportsController = false,
+            supportsControlled = true,
+            port = SERVICE_PORT,
+        )
         startHeartbeatLoop()
         callHost = ControlledCallHost(this, { payload -> sendCallSignal(payload) }) { notifyIncomingCall() }
         fileHost = ControlledFileHost(File(filesDir, "inbox"))
@@ -106,6 +118,8 @@ class ControlledSessionService : Service() {
 
     override fun onDestroy() {
         heartbeatRunning.set(false)
+        // R1 撤播（研发评审口径）：服务停、广播撤，不留幽灵设备——对端列表随 NSD service-lost 消失，不超 30 秒。
+        nsdController.unregister()
         server?.stop()
         callHost?.end()
         callHost = null
