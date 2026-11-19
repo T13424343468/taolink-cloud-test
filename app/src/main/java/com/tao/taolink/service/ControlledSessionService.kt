@@ -178,7 +178,8 @@ class ControlledSessionService : Service() {
                 }
                 // 状态随心跳捎带（协议 §2-9），不单独建连
                 connection.send(Frame(Route.STATUS, FrameType.STATUS, frame.seq, StatusCodec.encode(statusProvider.snapshot(online = true))))
-                connection.send(Frame(Route.CONTROL, FrameType.ACK, frame.seq, HEARTBEAT_ACK))
+                // ACK 载荷=1B 路由 + 8B seq（主控端按此对账喂狗；固定短载荷主控端解析不了，心跳永远喂不上）
+                connection.send(Frame(Route.CONTROL, FrameType.ACK, frame.seq, ackBytes(frame.seq)))
             }
             FrameType.HELLO -> {
                 // 握手契约（协议 §2-2）：明文 HELLO 交换指纹，主控端等本端回同型帧；不回则对端永久阻塞
@@ -197,7 +198,7 @@ class ControlledSessionService : Service() {
             }
             FrameType.COMMAND -> {
                 val ok = ControlDispatcher.dispatch(frame.payload, controlExecutor)
-                connection.send(Frame(Route.CONTROL, FrameType.ACK, frame.seq, if (ok) ACK_OK else ACK_FAIL))
+                connection.send(Frame(Route.CONTROL, FrameType.ACK, frame.seq, if (ok) ackBytes(frame.seq) else ackBytes(-frame.seq)))
             }
             FrameType.CALL_SIGNAL -> if (frame.route == Route.AUDIO) {
                 callHost?.onCallSignal(frame.payload)
@@ -254,10 +255,15 @@ class ControlledSessionService : Service() {
         /** 被控端主动发帧的序号源（应答信令回程用；主控端回执由对端 seq 对账，不冲突）。 */
         private val callSeqCounter = AtomicLong(0)
 
-        private val HEARTBEAT_ACK = byteArrayOf(1)
-        private val ACK_OK = byteArrayOf(0)
-        private val ACK_FAIL = byteArrayOf(1)
         private val PAIR_REJECT = byteArrayOf(0)
+
+        /** ACK 载荷：1B 路由 + 8B 大端 seq，与主控端 ackPayload/parseAckSeq 同构（对账喂狗）。 */
+        private fun ackBytes(seq: Long): ByteArray {
+            val out = ByteArray(9)
+            out[0] = Route.CONTROL.id.toByte()
+            for (i in 0 until 8) out[1 + i] = (seq ushr ((7 - i) * 8)).toByte()
+            return out
+        }
 
         fun start(context: Context) {
             context.startForegroundService(Intent(context, ControlledSessionService::class.java))
