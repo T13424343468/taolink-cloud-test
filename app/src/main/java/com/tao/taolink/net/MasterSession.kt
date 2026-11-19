@@ -166,6 +166,7 @@ class MasterSession(
     /** 通话信令发送（语音引擎班 2026-11-19；走 AUDIO 路由帧）。 */
     fun sendCallSignal(payload: ByteArray): Long {
         val seq = seqCounter.incrementAndGet()
+        LinkLog.d(TAG, "通话信令入队 seq=$seq len=${payload.size} state=$state")
         enqueueWire(wireBytes(Route.AUDIO, FrameType.CALL_SIGNAL, seq, payload))
         return seq
     }
@@ -303,7 +304,10 @@ class MasterSession(
             }
             FrameType.CALL_SIGNAL ->
                 when (frame.route) {
-                    Route.AUDIO -> onCallSignal?.invoke(frame.payload)
+                    Route.AUDIO -> {
+                        LinkLog.d(TAG, "收到通话信令 len=${frame.payload.size}")
+                        onCallSignal?.invoke(frame.payload) ?: LinkLog.w(TAG, "通话信令无处投递：onCallSignal 未接线")
+                    }
                     else -> LinkLog.d(TAG, "帧暂未处理 route=${frame.route}")
                 }
             FrameType.CHUNK ->

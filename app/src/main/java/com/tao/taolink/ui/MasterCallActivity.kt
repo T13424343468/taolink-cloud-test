@@ -56,6 +56,7 @@ class MasterCallActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        activeInstance = this
         val session = MasterSessionHolder.get()
         if (session == null || !session.isRunning()) {
             Toast.makeText(this, R.string.call_session_not_ready, Toast.LENGTH_SHORT).show()
@@ -90,8 +91,12 @@ class MasterCallActivity : AppCompatActivity() {
     override fun onDestroy() {
         channel?.end()
         channel = null
-        MasterSessionHolder.get()?.onCallSignal = null
-        MasterCallChannel.appContext = null
+        // 只许在场实例拆信令入口：转场期 onDestroy 可能晚于新实例 onResume 迟到，误拆活注册会让通话变聋（云跑实弹 2026-11-19 教训）
+        if (activeInstance === this) {
+            activeInstance = null
+            MasterSessionHolder.get()?.onCallSignal = null
+            MasterCallChannel.appContext = null
+        }
         remoteRenderer.release()
         localRenderer.release()
         super.onDestroy()
@@ -147,5 +152,9 @@ class MasterCallActivity : AppCompatActivity() {
 
         const val REQUEST_CALL_PERMISSIONS = 1001
         val PERMISSIONS = arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
+
+        /** 在场实例口（转场期 onDestroy 迟到不误拆活注册）。 */
+        @Volatile
+        var activeInstance: MasterCallActivity? = null
     }
 }

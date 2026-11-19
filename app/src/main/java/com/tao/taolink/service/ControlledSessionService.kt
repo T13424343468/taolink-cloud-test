@@ -80,7 +80,16 @@ class ControlledSessionService : Service() {
             executor.execute {
                 activeConnection = connection
                 transitionTo(SessionState.DISCOVERED)
-                connection.startReading { frame -> executor.execute { handleFrame(connection, frame) } }
+                connection.startReading { frame ->
+                    executor.execute {
+                        try {
+                            handleFrame(connection, frame)
+                        } catch (e: Exception) {
+                            // 帧处理不许静默带死池线程：池线程带异常退出后帧再无人处理，链路假活（云跑实弹 2026-11-19 教训）
+                            LinkLog.w(TAG, "帧处理异常 type=${frame.type}：${e.message}")
+                        }
+                    }
+                }
             }
         }
         val listenOk = server?.start() == true
@@ -201,7 +210,9 @@ class ControlledSessionService : Service() {
                 connection.send(Frame(Route.CONTROL, FrameType.ACK, frame.seq, if (ok) ackBytes(frame.seq) else ackBytes(-frame.seq)))
             }
             FrameType.CALL_SIGNAL -> if (frame.route == Route.AUDIO) {
-                callHost?.onCallSignal(frame.payload)
+                LinkLog.d(TAG, "收到通话信令 len=${frame.payload.size}")
+                val host = callHost
+                if (host == null) LinkLog.w(TAG, "通话宿主未就绪，信令丢弃") else host.onCallSignal(frame.payload)
             }
             else -> {
                 // 画面/文件通道由对位垂直实现接手，本班不透传不明帧
