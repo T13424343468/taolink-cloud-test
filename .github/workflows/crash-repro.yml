@@ -123,8 +123,9 @@ jobs:
           CRASH=0
           grep -q "FATAL EXCEPTION" logcat-step1.txt 2>/dev/null && CRASH=1
           grep -q "FATAL EXCEPTION" logcat-step2.txt 2>/dev/null && CRASH=1
-          [ -s crash_last-step1.txt ] && CRASH=1
-          [ -s crash_last-step2.txt ] && CRASH=1
+          # crash_last 只在含真实异常行时算数（run-as 的报错文本会混进 stdout）
+          grep -qE "Exception|Error:" crash_last-step1.txt 2>/dev/null && ! grep -q "No such file" crash_last-step1.txt 2>/dev/null && CRASH=1
+          grep -qE "Exception|Error:" crash_last-step2.txt 2>/dev/null && ! grep -q "No such file" crash_last-step2.txt 2>/dev/null && CRASH=1
           if [ "$CRASH" = "1" ]; then
             echo "REPRO_CRASH_CONFIRMED"
             exit 1
