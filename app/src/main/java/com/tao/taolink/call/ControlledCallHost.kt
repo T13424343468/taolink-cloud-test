@@ -35,7 +35,9 @@ class ControlledCallHost(
             end()
             return
         }
-        if (engine == null && CallSignalCodec.parseSdp(payload)?.isOffer == true) {
+        val sdp = CallSignalCodec.parseSdp(payload)
+        LinkLog.d(TAG, "通话信令分诊 len=${payload.size} engineAlive=${engine != null} sdpOffer=${sdp?.isOffer}")
+        if (engine == null && sdp?.isOffer == true) {
             LinkLog.d(TAG, "对端来电，引擎应答")
             onIncoming() // 轻提示（通知点开才见画面）：被控零操作，通话不因无人看画面而断
             ui?.onIncomingCall()

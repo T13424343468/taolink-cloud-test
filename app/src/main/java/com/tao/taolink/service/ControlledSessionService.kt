@@ -44,10 +44,10 @@ import java.util.concurrent.atomic.AtomicLong
 class ControlledSessionService : Service() {
 
     // 双机实弹 2026-11-19 定因：单线程池被心跳 while 循环永久占用，连接回调全部饿死（TCP 能通、HELLO 无人回）。
-    // 改多线程池：心跳循环占一线程，连接接入/帧处理/来电动作并行不互相卡死。
+    // 心跳循环已挪独立守护线程；帧处理回归单线程保序（offer 必须先于 ICE 入引擎，乱序会让应答竞态静默掉链）。
     private val heartbeatRunning = java.util.concurrent.atomic.AtomicBoolean(false)
 
-    private val executor = Executors.newCachedThreadPool { r ->
+    private val executor = Executors.newSingleThreadExecutor { r ->
         Thread(r, "taolink-ctl").apply { isDaemon = true }
     }
     private var server: SessionServer? = null
