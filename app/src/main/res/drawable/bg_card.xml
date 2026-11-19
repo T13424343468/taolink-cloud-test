@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- R3 瓷釉卡片底：纯白卡面 + 暗包边（gl_edge 半透明描边，深浅主题自动切换）；层次靠衬不靠喊。
+     沉投影由使用处 android:elevation 提供。 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <solid android:color="@color/brand_card" />
+    <stroke android:width="1dp" android:color="@color/gl_edge" />
     <corners android:radius="20dp" />
 </shape>
