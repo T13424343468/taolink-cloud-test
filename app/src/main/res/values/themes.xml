@@ -1,3 +1,9 @@
 <resources>
-    <style name="Theme.TaoLink" parent="Theme.AppCompat.Light.NoActionBar" />
+    <style name="Theme.TaoLink" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowBackground">@color/brand_bg</item>
+        <item name="android:statusBarColor">@color/brand_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="colorPrimary">@color/brand_accent</item>
+        <item name="colorAccent">@color/brand_accent</item>
+    </style>
 </resources>

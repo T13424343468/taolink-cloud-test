@@ -106,4 +106,9 @@
     <string name="file_pick">选文件</string>
     <string name="file_pick_failed">文件读取失败，请重选</string>
     <string name="file_back">返回</string>
+    <string name="main_tagline">一台手机帮另一台手机，两步就连上</string>
+    <string name="role_controlled_aux">这手机由别人来操作，屏幕会亮出配对码</string>
+    <string name="role_help_aux">这手机去操作对方，在同一 WiFi 下找 TA</string>
+    <string name="main_role_note">两边装的是同一个 TaoLink，选今天谁帮谁就行</string>
+    <string name="pair_keep_screen">保持这页亮着，等对方输码。号码每次连接都会换。</string>
 </resources>

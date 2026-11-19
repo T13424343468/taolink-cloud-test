@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="brand_bg">#FAF8F4</color>
+    <color name="brand_text">#2C2A24</color>
+    <color name="brand_text_sub">#6D675A</color>
+    <color name="brand_card">#FFFFFF</color>
+    <color name="brand_card_soft">#F6F5F1</color>
+    <color name="brand_accent">#C7451D</color>
+    <color name="brand_accent_dark">#A23614</color>
+    <color name="brand_on_accent">#FFFFFF</color>
+    <color name="brand_outline">#E4DED2</color>
+</resources>
