@@ -16,6 +16,7 @@
         <activity android:name=".ui.ManageActivity" android:exported="true" tools:replace="android:exported" />
         <activity android:name=".ui.MasterCallActivity" android:exported="true" tools:replace="android:exported" />
         <activity android:name=".ui.ControlledCallActivity" android:exported="true" tools:replace="android:exported" />
+        <activity android:name=".ui.FileTransferActivity" android:exported="true" tools:replace="android:exported" />
 
         <service
             android:name=".service.ControlledSessionService"
