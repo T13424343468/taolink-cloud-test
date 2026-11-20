@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.tao.tao.link.PairingCodeTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-19T11:05:28.514Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-nmfwd6hffn" time="0.006">
+<testsuite name="com.tao.tao.link.PairingCodeTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-20T07:32:36.223Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-8vswdrf7cp" time="0.005">
   <properties/>
-  <testcase name="verify_wrongDigit_fails" classname="com.tao.tao.link.PairingCodeTest" time="0.002"/>
+  <testcase name="verify_wrongDigit_fails" classname="com.tao.tao.link.PairingCodeTest" time="0.004"/>
   <testcase name="verify_correctCode_passes" classname="com.tao.tao.link.PairingCodeTest" time="0.0"/>
-  <testcase name="verify_wrongLengthOrNonDigit_fails" classname="com.tao.tao.link.PairingCodeTest" time="0.001"/>
-  <testcase name="generate_sixDigits_allZeroPaddedLegitimate" classname="com.tao.tao.link.PairingCodeTest" time="0.002"/>
+  <testcase name="verify_wrongLengthOrNonDigit_fails" classname="com.tao.tao.link.PairingCodeTest" time="0.0"/>
+  <testcase name="generate_sixDigits_allZeroPaddedLegitimate" classname="com.tao.tao.link.PairingCodeTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

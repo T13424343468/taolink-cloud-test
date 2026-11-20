@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.tao.tao.link.HeartbeatMonitorTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-19T11:05:28.504Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-nmfwd6hffn" time="0.008">
+<testsuite name="com.tao.tao.link.HeartbeatMonitorTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-20T07:32:36.173Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-8vswdrf7cp" time="0.049">
   <properties/>
-  <testcase name="onPeerHeartbeat_resetsTimeoutAndExitsSelfHealing" classname="com.tao.tao.link.HeartbeatMonitorTest" time="0.005"/>
-  <testcase name="freshMonitor_notTimedOut" classname="com.tao.tao.link.HeartbeatMonitorTest" time="0.0"/>
-  <testcase name="beyondTimeoutLine_isTimedOut" classname="com.tao.tao.link.HeartbeatMonitorTest" time="0.0"/>
-  <testcase name="enterSelfHealing_idempotent" classname="com.tao.tao.link.HeartbeatMonitorTest" time="0.001"/>
-  <testcase name="withinTimeoutLine_notTimedOut" classname="com.tao.tao.link.HeartbeatMonitorTest" time="0.0"/>
+  <testcase name="onPeerHeartbeat_resetsTimeoutAndExitsSelfHealing" classname="com.tao.tao.link.HeartbeatMonitorTest" time="0.046"/>
+  <testcase name="freshMonitor_notTimedOut" classname="com.tao.tao.link.HeartbeatMonitorTest" time="0.001"/>
+  <testcase name="beyondTimeoutLine_isTimedOut" classname="com.tao.tao.link.HeartbeatMonitorTest" time="0.001"/>
+  <testcase name="enterSelfHealing_idempotent" classname="com.tao.tao.link.HeartbeatMonitorTest" time="0.0"/>
+  <testcase name="withinTimeoutLine_notTimedOut" classname="com.tao.tao.link.HeartbeatMonitorTest" time="0.001"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>
 </testsuite>

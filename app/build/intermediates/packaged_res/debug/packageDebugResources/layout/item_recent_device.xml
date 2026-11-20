@@ -12,9 +12,9 @@
         android:id="@+id/device_avatar"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:background="#E6E0D1"
+        android:background="@color/gl_accent_soft"
         android:gravity="center"
-        android:textColor="#2C2A24"
+        android:textColor="@color/brand_text"
         android:textSize="16sp"
         android:textStyle="bold" />
 
@@ -29,14 +29,14 @@
             android:id="@+id/device_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#2C2A24"
+            android:textColor="@color/brand_text"
             android:textSize="14sp" />
 
         <TextView
             android:id="@+id/device_meta"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#8F8773"
+            android:textColor="@color/gl_ink3"
             android:textSize="12sp" />
     </LinearLayout>
 

@@ -3,8 +3,6 @@
     <string name="role_help">去帮忙</string>
     <string name="role_controlled">让人帮</string>
     <string name="pair_code_hint">把这个号码告诉帮你的那个人</string>
-    <string name="pair_code_ip_label">本机地址：%1$s（搜不到设备时，对方在输码页填这个）</string>
-    <string name="pair_code_ip_unset">未取到，请确认已连 WiFi</string>
     <string name="default_device_name">TaoLink 手机</string>
     <string name="resident_title">TaoLink 驻留中</string>
     <string name="resident_text">保持连接以便被帮助</string>
@@ -38,8 +36,6 @@
     <string name="pair_input_title">输入配对码</string>
     <string name="pair_input_aux">看对方手机「让人帮」页面上的大字数字，输入这 6 位。</string>
     <string name="pair_input_pick_peer">附近找到多台设备，选要连的那台</string>
-    <string name="pair_input_need_peer">先在「附近设备」里找到对方并点连接，再输配对码；对方需开着「让人帮」。</string>
-    <string name="pair_input_ip_hint">对方本机地址（选填，搜不到时填对方配对码页显示的地址）</string>
     <string name="pair_input_connect">连接</string>
     <string name="pair_input_cancel">取消</string>
     <string name="pair_input_aux2">输错了会提示重输，不会连错人。</string>
@@ -63,12 +59,11 @@
     <string name="battery_banner">手机省电可能会悄悄关掉接收。想保险的话，点下面按钮允许后台常驻。</string>
     <string name="btn_battery_allow">允许后台常驻</string>
     <string name="battery_done">已允许后台常驻 ✓</string>
-    <string name="pair_code_hotspot_title">共用 WiFi 连了也通不了？别指望路由器了：开个热点让对方连你的热点，照样能连。</string>
-    <string name="btn_hotspot_open">开热点让对方连</string>
-    <string name="pair_input_ble_searching">局域网里没找到，正在用蓝牙找对方…</string>
-    <string name="pair_input_ble_unreachable">蓝牙找到对方了，但网络不通——让对方开热点，你连上热点后再输码连一次。</string>
-    <string name="pair_input_ble_timeout">蓝牙也没找到——让对方开热点，你连上热点再连一次。</string>
-    <string name="pair_input_hotspot_hint">搜不到/连不通时：让对方开热点，你连上那个热点，再填它大字页新显示的地址。</string>
+    <string name="pair_input_p2p_searching">正在用无线直连找对方…（对方停在「让人帮」大字页才会出现）</string>
+    <string name="pair_input_p2p_linking">找到对方了，正在建立直连…</string>
+    <string name="pair_input_p2p_none">附近没找到对方——确认对方停在「让人帮」大字页、两台手机放近一点，再输一次。</string>
+    <string name="pair_input_p2p_failed">直连没建成——请再输一次码重试。</string>
+    <string name="pair_input_p2p_permission">需要「附近的设备」权限才能无线直连找到对方，请在弹窗里允许。</string>
 
     <string name="reconnect_title">连接断了，正在自动重连…</string>
     <string name="reconnect_aux">弱网波动时会多试几次，不用管它</string>

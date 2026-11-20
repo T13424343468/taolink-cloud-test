@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.wifi.p2p.WifiP2pDevice
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -15,10 +16,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.tao.tao.link.R
-import com.tao.tao.link.net.BleHandshake
-import com.tao.tao.link.net.BlePeerScanner
-import com.tao.tao.link.net.DiscoveryService
-import com.tao.tao.link.net.NsdDiscoveryController
+import com.tao.tao.link.net.WifiDirectPairing
 import com.tao.tao.link.protocol.PairingRecord
 import com.tao.tao.link.service.ControlledSessionService
 
@@ -26,51 +24,30 @@ import com.tao.tao.link.service.ControlledSessionService
  * 输配对码（定稿原型 v2 s-pair-input）：6 位码提交给 MasterSession.pairAndConnect（net 层），
  * 成功进连接中态（ConnectingActivity），失败提示重输（s-pair-input 文案：不会连错人）。
  *
- * 真机修红（0.2.5 验收：输码连不上）：无发现入口（主控主页直进/重连记录）进来时本页自己扫——
- * 提交时按当前扫到的可被控设备走：0 台给明确提示；1 台直连；多台弹选择（不会连错人）。
- * 此前空地址直接开连接必败，等于整条「输码」路是死的。
+ * 0.5.0 拍板：发现与组网整层换 Wi-Fi Direct——系统自己发现设备、协商组网、分 IP，
+ * 不再依赖同一 WiFi/热点/mDNS/蓝牙信令。提交后：扫到 1 台 TaoLink 设备直连；
+ * 多台弹选择（不会连错人）；0 台进「正在找」态周期重扫（双方同时扫会互相看不见的时序坑），
+ * 超时给明确文案。发现页带地址进来的预选目标仍保留（同一 WiFi 路径照旧）。
  */
 class PairInputActivity : AppCompatActivity() {
 
-    private var discovery: NsdDiscoveryController? = null
-    private val peers = LinkedHashMap<String, DiscoveryService.DiscoveredPeer>()
+    private var p2p: WifiDirectPairing? = null
     private val mainHandler = Handler(Looper.getMainLooper())
-
-    // 蓝牙信令兜底（0.4.0 配对捎带信令）：mDNS 0 台时自动转蓝牙扫地址，用户零操作
-    private var bleScanner: BlePeerScanner? = null
-    private var bleConnected = false
-    private var pendingBleCode: String? = null
+    private var pendingCode: String? = null
+    private var pendingDeviceName: String = ""
+    private var linked = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pair_input)
-        // 自身修红（0.2.6 真机复验暴露）：discovery 原为 lateinit，仅无预选地址时初始化——
-        // 从发现页带地址进本页，离开页面 onDestroy 解引用必崩，整条「找到设备→输码」路带雷。
-        // 改为进页必初始化（组播锁随构造持有无害），仅自扫描分支起浏览。
-        discovery = NsdDiscoveryController(this)
         val input = findViewById<EditText>(R.id.pair_code_input)
-        val ipInput = findViewById<EditText>(R.id.pair_input_ip)
-        findViewById<Button>(R.id.btn_connect_cancel).setOnClickListener { finish() }
         findViewById<Button>(R.id.btn_connect_submit).setOnClickListener {
             val code = input.text?.toString().orEmpty()
             if (code.length != PAIR_CODE_LEN) {
                 Toast.makeText(this, R.string.pair_input_aux, Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            val manualIp = ipInput.text?.toString().orEmpty().trim()
-            if (manualIp.isNotEmpty()) {
-                // 直连后路（发现被 OEM/路由器拦时的兜底路径，§6 换）：输对方屏幕显示的本机地址直达，
-                // 端口即被控监听端口；指纹留空同发现路径口径，配对码仍校验不连错人。
-                ConnectingActivity.start(
-                    this,
-                    manualIp,
-                    ControlledSessionService.SERVICE_PORT,
-                    code,
-                    intent.getStringExtra(EXTRA_FINGERPRINT).orEmpty(),
-                    intent.getStringExtra(EXTRA_NAME).orEmpty(),
-                )
-                return@setOnClickListener
-            }
+            // 手填地址后路已删（0.4.2 拍板）；发现页带地址进来的预选目标仍保留。
             val host = intent.getStringExtra(EXTRA_HOST).orEmpty()
             if (host.isNotEmpty()) {
                 ConnectingActivity.start(
@@ -82,151 +59,152 @@ class PairInputActivity : AppCompatActivity() {
                     intent.getStringExtra(EXTRA_NAME).orEmpty(),
                 )
             } else {
-                submitWithScannedPeer(code)
+                submitWithP2pPeers(code)
             }
         }
         if (intent.getStringExtra(EXTRA_HOST).isNullOrEmpty()) {
-            startSelfScan()
+            startP2pScan()
         }
     }
 
     override fun onDestroy() {
-        discovery?.stopBrowsing() // 离页即停扫，无残留回调（发现取消口径一致）
-        bleScanner?.stop()
-        bleScanner = null
         mainHandler.removeCallbacksAndMessages(null)
+        p2p?.stop() // 离页即停扫与敲门监听，无残留回调（发现取消口径一致）
+        p2p = null
         super.onDestroy()
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQ_BLE_SCAN) {
-            val code = pendingBleCode
-            pendingBleCode = null
-            if (code != null && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startBleFallback(code)
+        if (requestCode == REQ_P2P) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startP2pScan()
             } else {
-                Toast.makeText(this, R.string.pair_input_need_peer, Toast.LENGTH_LONG).show()
+                Toast.makeText(this, R.string.pair_input_p2p_permission, Toast.LENGTH_LONG).show()
             }
         }
     }
 
-    /** 无预选目标：进页即扫（同发现页口径），提交那一刻以扫到的设备为准。 */
-    private fun startSelfScan() {
-        val controller = discovery ?: return
-        controller.startBrowsing(
-            onFound = { peer -> runOnUiThread { if (peer.supportsControlled) peers[peer.host] = peer } },
-            onError = { /* 扫描启动失败不拦提交：提交时按 0 台口径给提示 */ },
-        )
-    }
-
-    private fun submitWithScannedPeer(code: String) {
-        val found = peers.values.toList()
-        when {
-            found.isEmpty() -> startBleFallback(code) // 0 台不直接劝退：自动转蓝牙信令兜底（0.4.0 拍板口径）
-            found.size == 1 -> connectToPeer(found[0], code)
-            else -> AlertDialog.Builder(this)
-                .setTitle(R.string.pair_input_pick_peer)
-                .setItems(found.map { it.deviceName }.toTypedArray()) { _, which ->
-                    connectToPeer(found[which], code)
-                }
-                .setNegativeButton(android.R.string.cancel, null)
-                .show()
+    /** 无预选目标：进页即扫（Wi-Fi Direct），提交那一刻以扫到的设备为准。 */
+    private fun startP2pScan() {
+        val missing = p2pPermissions()
+        if (missing.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, missing.toTypedArray(), REQ_P2P)
+            return
         }
+        if (p2p != null) return
+        val controller = WifiDirectPairing(
+            this,
+            WifiDirectPairing.Role.MASTER,
+            onPeersChanged = { devices -> runOnUiThread { onPeersChanged(devices) } },
+            onLinked = { host -> runOnUiThread { onP2pLinked(host) } },
+            onFailed = { reason -> runOnUiThread { onP2pFailed(reason) } },
+        )
+        p2p = controller
+        controller.start()
     }
 
-    /**
-     * 蓝牙信令兜底（0.4.0）：被控机配对码页在广播本机地址，这里按厂商 ID 过滤扫，
-     * 扫到即带码直连；超时未扫到给热点后路提示。权限缺失先申请，回来续上同一码。
-     */
-    private fun startBleFallback(code: String) {
-        val missing = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    private fun p2pPermissions(): List<String> =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             listOfNotNull(
-                android.Manifest.permission.BLUETOOTH_SCAN,
+                android.Manifest.permission.NEARBY_WIFI_DEVICES,
             ).filter { ActivityCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
         } else {
             listOfNotNull(
                 android.Manifest.permission.ACCESS_FINE_LOCATION,
             ).filter { ActivityCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
         }
-        if (missing.isNotEmpty()) {
-            pendingBleCode = code
-            ActivityCompat.requestPermissions(this, missing.toTypedArray(), REQ_BLE_SCAN)
-            return
+
+    private fun onPeersChanged(devices: List<WifiP2pDevice>) {
+        // 提交后仍在等设备：一出现立即接上（用户零操作口径）。
+        // 不按名字过滤（P2P 设备名是机型名，无 TaoLink 标识）：连错设备会在
+        // 连接页快速失败给明确文案，协议层配对码+指纹校验兜底不会连错人。
+        val code = pendingCode ?: return
+        if (linked) return
+        when {
+            devices.isEmpty() -> Unit
+            devices.size == 1 -> linkPeer(devices[0], code)
+            else -> pickAndLink(devices, code)
         }
-        val scanner = bleScanner ?: BlePeerScanner(this).also { bleScanner = it }
-        val started = scanner.start { info -> runOnUiThread { connectToBlePeer(info, code) } }
-        if (!started) {
-            // 蓝牙不可用（未开/无硬件）：退回原提示口径，不拦用户走地址后路
-            Toast.makeText(this, R.string.pair_input_need_peer, Toast.LENGTH_LONG).show()
-            return
-        }
-        findViewById<TextView>(R.id.pair_input_status).text = getString(R.string.pair_input_ble_searching)
-        mainHandler.postDelayed({
-            if (!bleConnected) {
-                scanner.stop()
-                findViewById<TextView>(R.id.pair_input_status).text = getString(R.string.pair_input_ble_timeout)
-            }
-        }, BLE_TIMEOUT_MS)
     }
 
-    private fun connectToBlePeer(info: BleHandshake.BeaconInfo, code: String) {
-        if (bleConnected) return
-        bleConnected = true
-        bleScanner?.stop()
-        val statusView = findViewById<TextView>(R.id.pair_input_status)
-        // 先探可达再进连接（0.4.1 修红）：蓝牙只递门牌，TCP 仍要网络路——
-        // 双方都不在同一网（如都关 WiFi 走蜂窝）时门牌指不到，直接进连接页必败；
-        // 探不通就地给热点后路指引，不把用户带进注定失败的连接页。
-        Thread {
-            val reachable = try {
-                java.net.Socket().use {
-                    it.connect(java.net.InetSocketAddress(info.ip, info.port), BLE_PROBE_TIMEOUT_MS.toInt())
-                    true
-                }
-            } catch (_: Exception) {
-                false
-            }
-            runOnUiThread {
-                if (reachable) {
-                    ConnectingActivity.start(
-                        this,
-                        info.ip,
-                        info.port,
-                        code,
-                        intent.getStringExtra(EXTRA_FINGERPRINT).orEmpty(),
-                        intent.getStringExtra(EXTRA_NAME).orEmpty(),
-                    )
-                } else {
-                    bleConnected = false // 放开重试闸：连上热点后可直接再输码
-                    statusView.text = getString(R.string.pair_input_ble_unreachable)
-                }
-            }
-        }.start()
+    private fun submitWithP2pPeers(code: String) {
+        val found = p2p?.peersSnapshot().orEmpty()
+        when {
+            found.isEmpty() -> waitAndRescan(code) // 0 台不劝退：进「正在找」态周期重扫
+            found.size == 1 -> linkPeer(found[0], code)
+            else -> pickAndLink(found, code)
+        }
     }
 
-    private fun connectToPeer(peer: DiscoveryService.DiscoveredPeer, code: String) {
+    private fun pickAndLink(found: List<WifiP2pDevice>, code: String) {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.pair_input_pick_peer)
+            .setItems(found.map { it.deviceName }.toTypedArray()) { _, which ->
+                linkPeer(found[which], code)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun linkPeer(device: WifiP2pDevice, code: String) {
+        if (linked) return
+        pendingCode = code
+        pendingDeviceName = device.deviceName
+        findViewById<TextView>(R.id.pair_input_status).text = getString(R.string.pair_input_p2p_linking)
+        p2p?.connect(device)
+    }
+
+    /** 0 台：进「正在找」态，周期重扫救双方同时扫的时序坑，超时给明确文案。 */
+    private fun waitAndRescan(code: String) {
+        pendingCode = code
+        findViewById<TextView>(R.id.pair_input_status).text = getString(R.string.pair_input_p2p_searching)
+        var waited = 0L
+        val tick = object : Runnable {
+            override fun run() {
+                if (linked) return
+                if (waited >= P2P_WAIT_TIMEOUT_MS) {
+                    findViewById<TextView>(R.id.pair_input_status).text =
+                        getString(R.string.pair_input_p2p_none)
+                    return
+                }
+                waited += P2P_RESCAN_INTERVAL_MS
+                p2p?.rediscover()
+                mainHandler.postDelayed(this, P2P_RESCAN_INTERVAL_MS)
+            }
+        }
+        mainHandler.postDelayed(tick, P2P_RESCAN_INTERVAL_MS)
+    }
+
+    private fun onP2pLinked(host: String) {
+        val code = pendingCode ?: return
+        linked = true
         ConnectingActivity.start(
             this,
-            peer.host,
-            peer.port,
+            host,
+            ControlledSessionService.SERVICE_PORT,
             code,
             intent.getStringExtra(EXTRA_FINGERPRINT).orEmpty(),
-            peer.deviceName,
+            pendingDeviceName,
         )
+    }
+
+    private fun onP2pFailed(reason: String) {
+        if (linked) return
+        findViewById<TextView>(R.id.pair_input_status).text = getString(R.string.pair_input_p2p_failed)
     }
 
     companion object {
         private const val PAIR_CODE_LEN = 6
-        private const val REQ_BLE_SCAN = 4803
-        private const val BLE_TIMEOUT_MS = 10_000L
-        private const val BLE_PROBE_TIMEOUT_MS = 2_000L
+        private const val REQ_P2P = 4804
+        private const val P2P_RESCAN_INTERVAL_MS = 4_000L
+        private const val P2P_WAIT_TIMEOUT_MS = 20_000L
         const val EXTRA_HOST = "host"
         const val EXTRA_PORT = "port"
         const val EXTRA_FINGERPRINT = "fingerprint"
         const val EXTRA_NAME = "name"
 
-        fun startForPeer(context: Context, peer: DiscoveryService.DiscoveredPeer) {
+        fun startForPeer(context: Context, peer: com.tao.tao.link.net.DiscoveryService.DiscoveredPeer) {
             context.startActivity(
                 Intent(context, PairInputActivity::class.java)
                     .putExtra(EXTRA_HOST, peer.host)

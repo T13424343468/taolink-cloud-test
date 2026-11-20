@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.tao.tao.link.call.MasterCallChannelTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-11-19T11:05:28.643Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-nmfwd6hffn" time="0.035">
+<testsuite name="com.tao.tao.link.call.MasterCallChannelTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-11-20T07:32:36.562Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-8vswdrf7cp" time="0.034">
   <properties/>
-  <testcase name="degradeVideo_onlyInActiveCall_andOnlyOnce" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.022"/>
-  <testcase name="end_keepsOtherLiveCallRegistration" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.004"/>
+  <testcase name="degradeVideo_onlyInActiveCall_andOnlyOnce" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.025"/>
+  <testcase name="end_keepsOtherLiveCallRegistration" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.002"/>
   <testcase name="startVoice_blockedWhenSessionDead" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.0"/>
   <testcase name="end_clearsLiveCallRegistration_whenSelf" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.001"/>
-  <testcase name="startVoice_activeWhenSessionLiveAndSinkWired" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.002"/>
+  <testcase name="startVoice_activeWhenSessionLiveAndSinkWired" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.0"/>
   <testcase name="onCallSignal_ignoredWhenIdle_noThrow" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.0"/>
   <testcase name="endLiveCall_noOpWhenNoLiveCall" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.0"/>
   <testcase name="startVideo_blockedWithoutContext" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.0"/>
-  <testcase name="end_resetsStateAndQuality" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.002"/>
-  <testcase name="startVideo_blockedWithoutSignalSink" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.0"/>
-  <testcase name="end_clearsVideoCallbacks_andNotifiesEndedOnce" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.002"/>
+  <testcase name="end_resetsStateAndQuality" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.0"/>
+  <testcase name="startVideo_blockedWithoutSignalSink" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.001"/>
+  <testcase name="end_clearsVideoCallbacks_andNotifiesEndedOnce" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.003"/>
   <testcase name="startVideo_blockedWhenSessionDead" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.0"/>
   <testcase name="endLiveCall_routesToRegisteredLiveChannel" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.001"/>
   <testcase name="startVoice_blockedWithoutSignalSink" classname="com.tao.tao.link.call.MasterCallChannelTest" time="0.0"/>

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.tao.tao.link.FrameTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-19T11:05:28.491Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-nmfwd6hffn" time="0.008">
+<testsuite name="com.tao.tao.link.FrameTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-20T07:32:36.144Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-8vswdrf7cp" time="0.027">
   <properties/>
-  <testcase name="decode_versionMismatch_rejected" classname="com.tao.tao.link.FrameTest" time="0.004"/>
-  <testcase name="encode_zeroPayload_frameLengthHeaderOnly" classname="com.tao.tao.link.FrameTest" time="0.002"/>
+  <testcase name="decode_versionMismatch_rejected" classname="com.tao.tao.link.FrameTest" time="0.025"/>
+  <testcase name="encode_zeroPayload_frameLengthHeaderOnly" classname="com.tao.tao.link.FrameTest" time="0.0"/>
   <testcase name="encodeThenDecode_roundtrip_payloadIntact" classname="com.tao.tao.link.FrameTest" time="0.0"/>
-  <testcase name="decode_tooShortInput_returnsNullNotThrow" classname="com.tao.tao.link.FrameTest" time="0.001"/>
+  <testcase name="decode_tooShortInput_returnsNullNotThrow" classname="com.tao.tao.link.FrameTest" time="0.0"/>
   <testcase name="decode_unknownRouteOrType_returnsNullNotThrow" classname="com.tao.tao.link.FrameTest" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>

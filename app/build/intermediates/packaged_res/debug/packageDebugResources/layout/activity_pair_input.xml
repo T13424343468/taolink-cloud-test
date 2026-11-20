@@ -3,7 +3,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
+    android:background="@color/brand_bg"
     android:gravity="center_horizontal"
     android:orientation="vertical"
     android:padding="20dp">
@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:text="@string/pair_input_title"
-        android:textColor="#2C2A24"
+        android:textColor="@color/brand_text"
         android:textSize="20sp"
         android:textStyle="bold" />
 
@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="@string/pair_input_aux"
-        android:textColor="#6D675A"
+        android:textColor="@color/brand_text_sub"
         android:textSize="12sp" />
 
     <EditText
@@ -30,14 +30,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:background="#F6F5F1"
+        android:background="@color/brand_card_soft"
         android:gravity="center"
         android:hint="@string/pair_input_code_hint"
         android:inputType="number"
         android:letterSpacing="0.3"
         android:maxLength="6"
         android:padding="16dp"
-        android:textColor="#2C2A24"
+        android:textColor="@color/brand_text"
         android:textSize="28sp" />
 
     <Button
@@ -47,18 +47,27 @@
         android:layout_marginTop="16dp"
         android:text="@string/pair_input_connect" />
 
-    <Button
-        android:id="@+id/btn_connect_cancel"
-        style="@style/Widget.AppCompat.Button.ButtonBar.AlertDialog"
+    <TextView
+        android:id="@+id/pair_input_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/pair_input_cancel" />
+        android:layout_marginTop="8dp"
+        android:textColor="@color/brand_text_sub"
+        android:textSize="12sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/pair_input_p2p_searching"
+        android:textColor="@color/gl_ink3"
+        android:textSize="12sp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="@string/pair_input_aux2"
-        android:textColor="#8F8773"
+        android:textColor="@color/gl_ink3"
         android:textSize="12sp" />
 </LinearLayout>

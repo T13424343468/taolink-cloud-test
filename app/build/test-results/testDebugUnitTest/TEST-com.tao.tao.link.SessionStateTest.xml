@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.tao.tao.link.SessionStateTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-19T11:05:28.597Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-nmfwd6hffn" time="0.003">
+<testsuite name="com.tao.tao.link.SessionStateTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-20T07:32:36.502Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-8vswdrf7cp" time="0.015">
   <properties/>
-  <testcase name="idle_directToPairing_blocked" classname="com.tao.tao.link.SessionStateTest" time="0.002"/>
-  <testcase name="disconnected_canEnterSelfHealingOrIdle_notDirectPairing" classname="com.tao.tao.link.SessionStateTest" time="0.001"/>
+  <testcase name="idle_directToPairing_blocked" classname="com.tao.tao.link.SessionStateTest" time="0.014"/>
+  <testcase name="disconnected_canEnterSelfHealingOrIdle_notDirectPairing" classname="com.tao.tao.link.SessionStateTest" time="0.0"/>
   <testcase name="idle_toDiscovered_allowed" classname="com.tao.tao.link.SessionStateTest" time="0.0"/>
   <testcase name="pairing_toConnected_allowed_toSelfHealing_blocked" classname="com.tao.tao.link.SessionStateTest" time="0.0"/>
   <testcase name="connected_toSelfHealing_allowed_selfHealingBackToConnected_allowed" classname="com.tao.tao.link.SessionStateTest" time="0.0"/>

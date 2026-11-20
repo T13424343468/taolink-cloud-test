@@ -15,15 +15,13 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
-    <!-- 蓝牙信令（0.4.0 配对捎带信令）：API 31+ 用新权限；API 26-30 走旧权限+定位授权扫 BLE -->
-    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <!-- Wi-Fi Direct 配对（0.5.0 拍板：发现与组网换系统 P2P 直连）：
+         API 33+ 用 NEARBY_WIFI_DEVICES（neverForLocation）；API 26-32 走定位授权扫 P2P -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission
-        android:name="android.permission.BLUETOOTH_SCAN"
+        android:name="android.permission.NEARBY_WIFI_DEVICES"
         android:usesPermissionFlags="neverForLocation"
-        tools:targetApi="s" />
+        tools:targetApi="tiramisu" />
 
     <application
         android:name=".TaoLinkApp"

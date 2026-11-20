@@ -13,7 +13,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:textColor="#2C2A24"
+        android:textColor="@color/brand_text"
         android:textSize="14sp" />
 
     <TextView
@@ -21,7 +21,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginRight="8dp"
-        android:textColor="#8F8773"
+        android:textColor="@color/gl_ink3"
         android:textSize="12sp" />
 
     <Button

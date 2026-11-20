@@ -1,54 +1,78 @@
 [
     {
-        "merged": "com.tao.tao.link.app-debug-23:/layout_activity_master_home.xml.flat",
-        "source": "com.tao.tao.link.app-main-25:/layout/activity_master_home.xml"
+        "merged": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-debug-23:/layout_item_recent_device.xml.flat",
+        "source": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-main-25:/layout/item_recent_device.xml"
     },
     {
-        "merged": "com.tao.tao.link.app-debug-23:/layout_item_recent_device.xml.flat",
-        "source": "com.tao.tao.link.app-main-25:/layout/item_recent_device.xml"
+        "merged": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-debug-23:/drawable_bg_card.xml.flat",
+        "source": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-main-25:/drawable/bg_card.xml"
     },
     {
-        "merged": "com.tao.tao.link.app-debug-23:/layout_activity_main.xml.flat",
-        "source": "com.tao.tao.link.app-main-25:/layout/activity_main.xml"
-    },
-    {
-        "merged": "com.tao.tao.link.app-debug-23:/layout_activity_controlled_call.xml.flat",
-        "source": "com.tao.tao.link.app-main-25:/layout/activity_controlled_call.xml"
+        "merged": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-debug-23:/layout_activity_controlled_call.xml.flat",
+        "source": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-main-25:/layout/activity_controlled_call.xml"
     },
     {
         "merged": "com.tao.tao.link.app-debug-23:/layout_activity_pair_code.xml.flat",
         "source": "com.tao.tao.link.app-main-25:/layout/activity_pair_code.xml"
     },
     {
+        "merged": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-debug-23:/layout_activity_file_transfer.xml.flat",
+        "source": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-main-25:/layout/activity_file_transfer.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-debug-23:/layout_activity_manage.xml.flat",
+        "source": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-main-25:/layout/activity_manage.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-debug-23:/layout_activity_master_call.xml.flat",
+        "source": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-main-25:/layout/activity_master_call.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-debug-23:/drawable_bg_btn_primary.xml.flat",
+        "source": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-main-25:/drawable/bg_btn_primary.xml"
+    },
+    {
         "merged": "com.tao.tao.link.app-debug-23:/layout_activity_pair_input.xml.flat",
         "source": "com.tao.tao.link.app-main-25:/layout/activity_pair_input.xml"
     },
     {
-        "merged": "com.tao.tao.link.app-debug-23:/xml_accessibility_service_config.xml.flat",
-        "source": "com.tao.tao.link.app-main-25:/xml/accessibility_service_config.xml"
+        "merged": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-debug-23:/xml_accessibility_service_config.xml.flat",
+        "source": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-main-25:/xml/accessibility_service_config.xml"
     },
     {
-        "merged": "com.tao.tao.link.app-debug-23:/layout_activity_master_call.xml.flat",
-        "source": "com.tao.tao.link.app-main-25:/layout/activity_master_call.xml"
+        "merged": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-debug-23:/layout_activity_connecting.xml.flat",
+        "source": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-main-25:/layout/activity_connecting.xml"
     },
     {
-        "merged": "com.tao.tao.link.app-debug-23:/layout_activity_file_transfer.xml.flat",
-        "source": "com.tao.tao.link.app-main-25:/layout/activity_file_transfer.xml"
+        "merged": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-debug-23:/drawable_bg_btn_secondary.xml.flat",
+        "source": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-main-25:/drawable/bg_btn_secondary.xml"
     },
     {
-        "merged": "com.tao.tao.link.app-debug-23:/layout_activity_connecting.xml.flat",
-        "source": "com.tao.tao.link.app-main-25:/layout/activity_connecting.xml"
+        "merged": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-debug-23:/layout_item_discover_peer.xml.flat",
+        "source": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-main-25:/layout/item_discover_peer.xml"
     },
     {
-        "merged": "com.tao.tao.link.app-debug-23:/layout_activity_discover.xml.flat",
-        "source": "com.tao.tao.link.app-main-25:/layout/activity_discover.xml"
+        "merged": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-debug-23:/layout_activity_pair_input.xml.flat",
+        "source": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-main-25:/layout/activity_pair_input.xml"
     },
     {
-        "merged": "com.tao.tao.link.app-debug-23:/layout_item_discover_peer.xml.flat",
-        "source": "com.tao.tao.link.app-main-25:/layout/item_discover_peer.xml"
+        "merged": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-debug-23:/layout_activity_pair_code.xml.flat",
+        "source": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-main-25:/layout/activity_pair_code.xml"
     },
     {
-        "merged": "com.tao.tao.link.app-debug-23:/layout_activity_manage.xml.flat",
-        "source": "com.tao.tao.link.app-main-25:/layout/activity_manage.xml"
+        "merged": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-debug-23:/drawable_bg_code_pill.xml.flat",
+        "source": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-main-25:/drawable/bg_code_pill.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-debug-23:/layout_activity_master_home.xml.flat",
+        "source": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-main-25:/layout/activity_master_home.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-debug-23:/layout_activity_main.xml.flat",
+        "source": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-main-25:/layout/activity_main.xml"
+    },
+    {
+        "merged": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-debug-23:/layout_activity_discover.xml.flat",
+        "source": "/root/.gradle/daemon/8.14/com.tao.tao.link.app-main-25:/layout/activity_discover.xml"
     }
 ]

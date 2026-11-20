@@ -2,7 +2,6 @@ package com.tao.tao.link.ui
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
@@ -10,9 +9,8 @@ import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import com.tao.tao.link.R
-import com.tao.tao.link.net.BleBeacon
+import com.tao.tao.link.net.WifiDirectPairing
 import com.tao.tao.link.protocol.DeviceFingerprint
 import com.tao.tao.link.protocol.DeviceIdentity
 import com.tao.tao.link.protocol.PairingResponder
@@ -22,14 +20,17 @@ import com.tao.tao.link.service.ControlledSessionService
 /**
  * 被控端配对码大字显示（需求清单 §1：配对码被控端大字显示、主控端输入，被控端全程零输入）。
  * 老人机场景字号拉满（大道至简：第一眼只见配对码这一件事）。
- * 直连后路（0.2.6 真机复验发现被 OEM/路由器拦时）：屏幕同时显示本机地址，
- * 对方在输码页填地址即直达，不依赖发现链路（§6 换，不换目标）。
  * OEM 适配（0.2.9）：进页防御性重起驻留服务 + 回环探活「接收就绪」，
  * 一键申请电池豁免（官方 isIgnoringBatteryOptimizations / ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS）。
+ *
+ * 0.5.0 拍板：发现与组网整层换 Wi-Fi Direct——本页只做两件事：
+ * 设 P2P 设备名（TaoLink-指纹前4位，对家名称可辨识）+ 组建成后当客户端时向主控敲门报地址；
+ * 蓝牙信标与热点后路整层下线（mDNS/蓝牙/热点拼凑被系统 P2P 直连替代）。
  */
 class PairCodeActivity : AppCompatActivity() {
 
     private lateinit var responder: PairingResponder
+    private var p2p: WifiDirectPairing? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,53 +43,30 @@ class PairCodeActivity : AppCompatActivity() {
         // 防御性重起：OEM 杀后台后重进本页时，把驻留服务拉回来再听 48190（服务自身幂等）。
         ControlledSessionService.start(this)
         findViewById<Button>(R.id.btn_battery_allow).setOnClickListener { requestBatteryExemption() }
-        // 热点后路：路由器拦设备互访时，被控机自开热点当网，主控连热点即直达（不碰路由器）。
-        findViewById<Button>(R.id.btn_hotspot_open).setOnClickListener { openHotspotSettings() }
     }
 
     override fun onResume() {
         super.onResume()
-        refreshIpLine()
         refreshBatteryBanner()
         probeServeReady()
-        startBleBeacon()
+        startP2pPairing()
     }
 
     override fun onPause() {
-        BleBeacon.stop() // 离页即停播，不留常开广播（最小功耗与最小暴露口径一致）
+        p2p?.stop() // 离页即停 P2P 会话与敲门，不留常开监听（最小功耗与最小暴露口径一致）
+        p2p = null
         super.onPause()
     }
 
-    /** 蓝牙信标（0.4.0 配对捎带信令）：权限齐了就随页常开广播本机地址；缺权限先申请，回来再开。 */
-    private fun startBleBeacon() {
-        val missing = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            listOfNotNull(
-                android.Manifest.permission.BLUETOOTH_ADVERTISE,
-            ).filter { ActivityCompat.checkSelfPermission(this, it) != android.content.pm.PackageManager.PERMISSION_GRANTED }
-        } else {
-            emptyList()
-        }
-        if (missing.isNotEmpty()) {
-            ActivityCompat.requestPermissions(this, missing.toTypedArray(), REQ_BLE_ADV)
-            return
-        }
-        val ip = localIpv4() ?: return
-        BleBeacon.start(this, ip, ControlledSessionService.SERVICE_PORT, responder.ownFingerprintHex())
-    }
-
-    /** 开热点设置页：先试热点专属面板，厂商不带时回退无线设置总页。 */
-    private fun openHotspotSettings() {
-        try {
-            startActivity(Intent("android.settings.TETHER_SETTINGS"))
-        } catch (_: Exception) {
-            runCatching { startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS)) }
-        }
-    }
-
-    /** 地址行随 onResume 刷新：热点开关后本机地址会变，回到本页立即重取。 */
-    private fun refreshIpLine() {
-        findViewById<TextView>(R.id.pair_code_ip).text =
-            getString(R.string.pair_code_ip_label, localIpv4() ?: getString(R.string.pair_code_ip_unset))
+    /**
+     * Wi-Fi Direct 配对会话（被控端角色）：本页开着期间监听 P2P 组建——
+     * 本机当客户端时向组长（主控）敲门报地址，主控据此回连本机 48190。
+     */
+    private fun startP2pPairing() {
+        if (p2p != null) return
+        val controller = WifiDirectPairing(this, WifiDirectPairing.Role.CONTROLLED)
+        p2p = controller
+        controller.start()
     }
 
     /** 一键申请电池豁免：先走系统直接授权弹窗，异常时回退到电池优化设置页。 */
@@ -132,17 +110,5 @@ class PairCodeActivity : AppCompatActivity() {
                     if (ready) getString(R.string.pair_code_serve_ready) else getString(R.string.pair_code_serve_down)
             }
         }.start()
-    }
-
-    /** 取本机 IPv4：优先 WiFi，多网卡时取第一个站点内地址；拿不到显示未取到，不空指。 */
-    private fun localIpv4(): String? =
-        java.net.NetworkInterface.getNetworkInterfaces().asSequence()
-            .filter { it.isUp && !it.isLoopback }
-            .flatMap { it.inetAddresses.asSequence() }
-            .firstOrNull { !it.isLoopbackAddress && it is java.net.Inet4Address }
-            ?.hostAddress
-
-    private companion object {
-        const val REQ_BLE_ADV = 4802
     }
 }

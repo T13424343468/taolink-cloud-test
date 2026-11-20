@@ -51,15 +51,6 @@
     </LinearLayout>
 
     <TextView
-        android:id="@+id/pair_code_ip"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:gravity="center"
-        android:textColor="@color/brand_text_sub"
-        android:textSize="15sp" />
-
-    <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="28dp"
@@ -95,20 +86,4 @@
         android:text="@string/btn_battery_allow"
         android:visibility="gone" />
 
-    <TextView
-        android:id="@+id/pair_code_hotspot_title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="18dp"
-        android:gravity="center"
-        android:text="@string/pair_code_hotspot_title"
-        android:textColor="@color/brand_text_sub"
-        android:textSize="13sp" />
-
-    <Button
-        android:id="@+id/btn_hotspot_open"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:text="@string/btn_hotspot_open" />
 </LinearLayout>

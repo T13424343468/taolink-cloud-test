@@ -1,7 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:ns1="http://schemas.android.com/tools">
+    <color name="brand_accent">#3D7A8F</color>
+    <color name="brand_accent_dark">#2F5F70</color>
+    <color name="brand_bg">#FFFFFF</color>
+    <color name="brand_card">#FFFFFF</color>
+    <color name="brand_card_soft">#EAF2F5</color>
+    <color name="brand_on_accent">#FFFFFF</color>
+    <color name="brand_outline">#E8E6E1</color>
+    <color name="brand_text">#1C1E21</color>
+    <color name="brand_text_sub">#5A6169</color>
+    <color name="gl_accent_ink">#FFFFFF</color>
+    <color name="gl_accent_soft">#EAF2F5</color>
+    <color name="gl_canvas">#111111</color>
+    <color name="gl_canvas_scrim">#66000000</color>
+    <color name="gl_edge">#1A1C1E21</color>
+    <color name="gl_hangup">#FF8A80</color>
+    <color name="gl_ink2">#5A6169</color>
+    <color name="gl_ink3">#9AA1A9</color>
+    <color name="gl_line">#E8E6E1</color>
+    <color name="gl_ok">#4A7C59</color>
+    <color name="gl_on_canvas">#FFFFFF</color>
+    <color name="gl_warn">#A65A2E</color>
+    <color name="gl_warn_soft">#F9EFE7</color>
     <string name="accessibility_service_desc">TaoLink 远程操控通道：在他人征得同意代为操作时，执行点击、滑动与文字输入。</string>
     <string name="app_name">TaoLink</string>
+    <string name="battery_banner">手机省电可能会悄悄关掉接收。想保险的话，点下面按钮允许后台常驻。</string>
+    <string name="battery_done">已允许后台常驻 ✓</string>
+    <string name="btn_battery_allow">允许后台常驻</string>
     <string name="call_btn_hangup">挂断</string>
     <string name="call_btn_video">视频通话</string>
     <string name="call_btn_voice">语音通话</string>
@@ -10,7 +35,12 @@
     <string name="call_session_not_ready">会话未连接，先回到配对页重连</string>
     <string name="call_status_connected">通话中</string>
     <string name="call_status_ready">就绪，选择语音或视频发起通话</string>
+    <string name="connecting_back_reinput">返回重输</string>
     <string name="connecting_cancel">取消</string>
+    <string name="connecting_fail_code">没连上：配对码不对或已过期——看对方大字页当前号码重输</string>
+    <string name="connecting_fail_no_answer">没连上：对方没应答——让对方退回 App 点「让人帮」重进大字页再试</string>
+    <string name="connecting_fail_protocol">没连上：两端版本不一致——两台手机都更新到同一版再试</string>
+    <string name="connecting_fail_unreachable">没连上：地址不通——核对地址数字是否一致，对方是否还停在「让人帮」大字页</string>
     <string name="connecting_state_doing">进行中…</string>
     <string name="connecting_state_done">完成</string>
     <string name="connecting_state_ready">就绪</string>
@@ -20,10 +50,15 @@
     <string name="connecting_title">正在连接</string>
     <string name="default_device_name">TaoLink 手机</string>
     <string name="discover_back_input">输配对码连接</string>
-    <string name="discover_none_hint">没看到想帮的设备？让对家打开 TaoLink 选「让人帮」，或直接输配对码。</string>
+    <string name="discover_fail_footer">还不行？检查附近设备权限，或改用配对码连接</string>
+    <string name="discover_fail_reason">可能不在同一 WiFi，或对方已关广播</string>
+    <string name="discover_fail_title">找不到设备</string>
+    <string name="discover_none_hint">附近还没开「让人帮」\n让对方打开 TaoLink，这里就会出现</string>
+    <string name="discover_retry">重试</string>
     <string name="discover_same_wifi">同一 WiFi</string>
-    <string name="discover_scanning">正在扫描同一 WiFi 下的设备…</string>
-    <string name="discover_title">在附近找设备</string>
+    <string name="discover_scanning">正在找附近的设备…</string>
+    <string name="discover_subtitle">同一 WiFi 下正在广播的被控端</string>
+    <string name="discover_title">附近的设备</string>
     <string name="file_back">返回</string>
     <string name="file_pick">选文件</string>
     <string name="file_pick_failed">文件读取失败，请重选</string>
@@ -32,6 +67,8 @@
     <string name="file_status_sending">正在发送… %1$d%%</string>
     <string name="file_status_verify_failed">对方校验失败，请重发</string>
     <string name="file_title">传文件</string>
+    <string name="main_role_note">两边装的是同一个 TaoLink，选今天谁帮谁就行</string>
+    <string name="main_tagline">一台手机帮另一台手机，两步就连上</string>
     <string name="manage_call_entry">通话</string>
     <string name="manage_cancel">取消</string>
     <string name="manage_disconnect">断开连接</string>
@@ -64,12 +101,21 @@
     <string name="master_switch_controlled">换「让人帮」</string>
     <string name="master_title">去帮忙</string>
     <string name="pair_code_hint">把这个号码告诉帮你的那个人</string>
+    <string name="pair_code_serve_down">接收未就绪——点「让人帮」重进一次再试</string>
+    <string name="pair_code_serve_ready">接收就绪：对方现在就能连你</string>
     <string name="pair_input_aux">看对方手机「让人帮」页面上的大字数字，输入这 6 位。</string>
     <string name="pair_input_aux2">输错了会提示重输，不会连错人。</string>
     <string name="pair_input_cancel">取消</string>
     <string name="pair_input_code_hint">6 位数字</string>
     <string name="pair_input_connect">连接</string>
+    <string name="pair_input_p2p_failed">直连没建成——请再输一次码重试。</string>
+    <string name="pair_input_p2p_linking">找到对方了，正在建立直连…</string>
+    <string name="pair_input_p2p_none">附近没找到对方——确认对方停在「让人帮」大字页、两台手机放近一点，再输一次。</string>
+    <string name="pair_input_p2p_permission">需要「附近的设备」权限才能无线直连找到对方，请在弹窗里允许。</string>
+    <string name="pair_input_p2p_searching">正在用无线直连找对方…（对方停在「让人帮」大字页才会出现）</string>
+    <string name="pair_input_pick_peer">附近找到多台设备，选要连的那台</string>
     <string name="pair_input_title">输入配对码</string>
+    <string name="pair_keep_screen">保持这页亮着，等对方输码。号码每次连接都会换。</string>
     <string name="path_lan">局域网直连</string>
     <string name="path_unrecorded">路径未记录</string>
     <string name="path_wan_direct">外网直连</string>
@@ -87,13 +133,24 @@
     <string name="resident_text">保持连接以便被帮助</string>
     <string name="resident_title">TaoLink 驻留中</string>
     <string name="role_controlled">让人帮</string>
+    <string name="role_controlled_aux">这手机由别人来操作，屏幕会亮出配对码</string>
     <string name="role_help">去帮忙</string>
+    <string name="role_help_aux">这手机去操作对方，在同一 WiFi 下找 TA</string>
     <string name="state_connected">已连接</string>
     <string name="state_controlling">操控中</string>
-    <string name="state_disconnected">断开</string>
+    <string name="state_disconnected">连接断开</string>
     <string name="state_discovered">已发现</string>
     <string name="state_idle">未发现</string>
     <string name="state_pairing">配对中</string>
-    <string name="state_self_healing">自愈中</string>
-    <style name="Theme.TaoLink" parent="Theme.AppCompat.Light.NoActionBar"/>
+    <string name="state_self_healing">连接不稳，自动重连中…（无需重新配对）</string>
+    <style name="Theme.TaoLink" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowBackground">@color/brand_bg</item>
+        <item name="android:statusBarColor">@color/brand_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="colorPrimary">@color/brand_accent</item>
+        <item name="colorAccent">@color/brand_accent</item>
+        <item name="android:windowOptOutEdgeToEdgeEnforcement" ns1:targetApi="35">true</item>
+        
+        <item name="android:fitsSystemWindows">true</item>
+    </style>
 </resources>
