@@ -7,11 +7,16 @@ permissions:
 
 jobs:
   dual-device:
+    strategy:
+      fail-fast: false
+      matrix:
+        api: ["31", "35"]
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     env:
       ADB_HOST: emulator-5554
       ADB_CTRL: emulator-5558
+      API_LEVEL: ${{ matrix.api }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,7 +43,7 @@ jobs:
           export ANDROID_SDK_ROOT=$ANDROID_HOME
           export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
           yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager "platform-tools" "emulator" "system-images;android-31;google_apis;x86_64"
+          sdkmanager "platform-tools" "emulator" "system-images;android-${{ matrix.api }};google_apis;x86_64"
           echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
           echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
@@ -56,7 +61,7 @@ jobs:
           export ANDROID_USER_HOME=$HOME/.android
           mkdir -p "$ANDROID_AVD_HOME"
           for N in tlm tlc; do
-            echo no | avdmanager create avd -n $N -k "system-images;android-31;google_apis;x86_64" || exit 1
+            echo no | avdmanager create avd -n $N -k "system-images;android-${{ matrix.api }};google_apis;x86_64" || exit 1
             CFG=$ANDROID_AVD_HOME/$N.avd/config.ini
             sed -i 's|^hw.gpu.enabled=.*|hw.gpu.enabled=no|' "$CFG" 2>/dev/null || echo 'hw.gpu.enabled=no' >> "$CFG"
             echo 'hw.gpu.mode=off' >> "$CFG"
@@ -256,7 +261,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: dual-device-evidence
+          name: dual-device-evidence-api${{ matrix.api }}
           path: |
             ui-*.xml
             texts-*.txt
@@ -280,7 +285,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: taolink-024-debug-apk
+          name: taolink-debug-apk-api${{ matrix.api }}
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: warn
 
