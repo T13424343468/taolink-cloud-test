@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.tao.tao.link.SelfHealingBackoffTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-20T07:32:36.485Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-8vswdrf7cp" time="0.012">
+<testsuite name="com.tao.tao.link.SelfHealingBackoffTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-20T08:55:04.030Z" hostname="sandbox-20aca4d267fbefeb76f4c19c3921de51-scrnzzdzrm" time="0.001">
   <properties/>
-  <testcase name="backoffSequence_doublesFromOneSecond_capsAtThirtySeconds" classname="com.tao.tao.link.SelfHealingBackoffTest" time="0.011"/>
+  <testcase name="backoffSequence_doublesFromOneSecond_capsAtThirtySeconds" classname="com.tao.tao.link.SelfHealingBackoffTest" time="0.0"/>
   <testcase name="reset_returnsToStartBackoff" classname="com.tao.tao.link.SelfHealingBackoffTest" time="0.0"/>
   <system-out><![CDATA[]]></system-out>
   <system-err><![CDATA[]]></system-err>

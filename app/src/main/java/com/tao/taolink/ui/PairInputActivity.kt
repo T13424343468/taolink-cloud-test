@@ -159,6 +159,8 @@ class PairInputActivity : AppCompatActivity() {
     private fun waitAndRescan(code: String) {
         pendingCode = code
         findViewById<TextView>(R.id.pair_input_status).text = getString(R.string.pair_input_p2p_searching)
+        // 重复提交不叠扫：先清旧循环再起新的（自查修红：连点提交会堆多个重扫循环）
+        mainHandler.removeCallbacksAndMessages(null)
         var waited = 0L
         val tick = object : Runnable {
             override fun run() {
