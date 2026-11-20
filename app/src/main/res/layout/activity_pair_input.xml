@@ -71,6 +71,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
+        android:text="@string/pair_input_hotspot_hint"
+        android:textColor="@color/gl_ink3"
+        android:textSize="12sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:text="@string/pair_input_aux2"
         android:textColor="@color/gl_ink3"
         android:textSize="12sp" />

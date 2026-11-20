@@ -63,6 +63,9 @@
     <string name="battery_banner">手机省电可能会悄悄关掉接收。想保险的话，点下面按钮允许后台常驻。</string>
     <string name="btn_battery_allow">允许后台常驻</string>
     <string name="battery_done">已允许后台常驻 ✓</string>
+    <string name="pair_code_hotspot_title">共用 WiFi 连了也通不了？别指望路由器了：开个热点让对方连你的热点，照样能连。</string>
+    <string name="btn_hotspot_open">开热点让对方连</string>
+    <string name="pair_input_hotspot_hint">搜不到/连不通时：让对方开热点，你连上那个热点，再填它大字页新显示的地址。</string>
 
     <string name="reconnect_title">连接断了，正在自动重连…</string>
     <string name="reconnect_aux">弱网波动时会多试几次，不用管它</string>

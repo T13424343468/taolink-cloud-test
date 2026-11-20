@@ -36,17 +36,33 @@ class PairCodeActivity : AppCompatActivity() {
             DeviceIdentity.ownFingerprint(filesDir, getString(R.string.default_device_name)),
         )
         findViewById<TextView>(R.id.pair_code_text).text = responder.displayCode()
-        findViewById<TextView>(R.id.pair_code_ip).text =
-            getString(R.string.pair_code_ip_label, localIpv4() ?: getString(R.string.pair_code_ip_unset))
         // 防御性重起：OEM 杀后台后重进本页时，把驻留服务拉回来再听 48190（服务自身幂等）。
         ControlledSessionService.start(this)
         findViewById<Button>(R.id.btn_battery_allow).setOnClickListener { requestBatteryExemption() }
+        // 热点后路：路由器拦设备互访时，被控机自开热点当网，主控连热点即直达（不碰路由器）。
+        findViewById<Button>(R.id.btn_hotspot_open).setOnClickListener { openHotspotSettings() }
     }
 
     override fun onResume() {
         super.onResume()
+        refreshIpLine()
         refreshBatteryBanner()
         probeServeReady()
+    }
+
+    /** 开热点设置页：先试热点专属面板，厂商不带时回退无线设置总页。 */
+    private fun openHotspotSettings() {
+        try {
+            startActivity(Intent("android.settings.TETHER_SETTINGS"))
+        } catch (_: Exception) {
+            runCatching { startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS)) }
+        }
+    }
+
+    /** 地址行随 onResume 刷新：热点开关后本机地址会变，回到本页立即重取。 */
+    private fun refreshIpLine() {
+        findViewById<TextView>(R.id.pair_code_ip).text =
+            getString(R.string.pair_code_ip_label, localIpv4() ?: getString(R.string.pair_code_ip_unset))
     }
 
     /** 一键申请电池豁免：先走系统直接授权弹窗，异常时回退到电池优化设置页。 */
