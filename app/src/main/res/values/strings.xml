@@ -35,6 +35,7 @@
 
     <string name="pair_input_title">输入配对码</string>
     <string name="pair_input_aux">看对方手机「让人帮」页面上的大字数字，输入这 6 位。</string>
+    <string name="pair_input_pick_peer">附近找到多台设备，选要连的那台</string>
     <string name="pair_input_need_peer">先在「附近设备」里找到对方并点连接，再输配对码；对方需开着「让人帮」。</string>
     <string name="pair_input_connect">连接</string>
     <string name="pair_input_cancel">取消</string>
