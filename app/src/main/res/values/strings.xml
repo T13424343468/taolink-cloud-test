@@ -58,6 +58,11 @@
     <string name="connecting_fail_code">没连上：配对码不对或已过期——看对方大字页当前号码重输</string>
     <string name="connecting_fail_protocol">没连上：两端版本不一致——两台手机都更新到同一版再试</string>
     <string name="connecting_back_reinput">返回重输</string>
+    <string name="pair_code_serve_ready">接收就绪：对方现在就能连你</string>
+    <string name="pair_code_serve_down">接收未就绪——点「让人帮」重进一次再试</string>
+    <string name="battery_banner">手机省电可能会悄悄关掉接收。想保险的话，点下面按钮允许后台常驻。</string>
+    <string name="btn_battery_allow">允许后台常驻</string>
+    <string name="battery_done">已允许后台常驻 ✓</string>
 
     <string name="reconnect_title">连接断了，正在自动重连…</string>
     <string name="reconnect_aux">弱网波动时会多试几次，不用管它</string>

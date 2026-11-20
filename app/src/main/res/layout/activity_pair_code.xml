@@ -66,4 +66,32 @@
         android:text="@string/pair_keep_screen"
         android:textColor="@color/brand_text_sub"
         android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/pair_code_serve"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:textColor="@color/brand_text_sub"
+        android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/pair_code_battery_banner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:gravity="center"
+        android:text="@string/battery_banner"
+        android:textColor="@color/brand_text"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/btn_battery_allow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="@string/btn_battery_allow"
+        android:visibility="gone" />
 </LinearLayout>
