@@ -3,14 +3,20 @@ package com.tao.tao.link.ui
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import com.tao.tao.link.R
+import com.tao.tao.link.net.BleHandshake
+import com.tao.tao.link.net.BlePeerScanner
 import com.tao.tao.link.net.DiscoveryService
 import com.tao.tao.link.net.NsdDiscoveryController
 import com.tao.tao.link.protocol.PairingRecord
@@ -29,6 +35,11 @@ class PairInputActivity : AppCompatActivity() {
     private var discovery: NsdDiscoveryController? = null
     private val peers = LinkedHashMap<String, DiscoveryService.DiscoveredPeer>()
     private val mainHandler = Handler(Looper.getMainLooper())
+
+    // 蓝牙信令兜底（0.4.0 配对捎带信令）：mDNS 0 台时自动转蓝牙扫地址，用户零操作
+    private var bleScanner: BlePeerScanner? = null
+    private var bleConnected = false
+    private var pendingBleCode: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,7 +92,23 @@ class PairInputActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         discovery?.stopBrowsing() // 离页即停扫，无残留回调（发现取消口径一致）
+        bleScanner?.stop()
+        bleScanner = null
+        mainHandler.removeCallbacksAndMessages(null)
         super.onDestroy()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQ_BLE_SCAN) {
+            val code = pendingBleCode
+            pendingBleCode = null
+            if (code != null && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                startBleFallback(code)
+            } else {
+                Toast.makeText(this, R.string.pair_input_need_peer, Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     /** 无预选目标：进页即扫（同发现页口径），提交那一刻以扫到的设备为准。 */
@@ -96,7 +123,7 @@ class PairInputActivity : AppCompatActivity() {
     private fun submitWithScannedPeer(code: String) {
         val found = peers.values.toList()
         when {
-            found.isEmpty() -> Toast.makeText(this, R.string.pair_input_need_peer, Toast.LENGTH_LONG).show()
+            found.isEmpty() -> startBleFallback(code) // 0 台不直接劝退：自动转蓝牙信令兜底（0.4.0 拍板口径）
             found.size == 1 -> connectToPeer(found[0], code)
             else -> AlertDialog.Builder(this)
                 .setTitle(R.string.pair_input_pick_peer)
@@ -106,6 +133,55 @@ class PairInputActivity : AppCompatActivity() {
                 .setNegativeButton(android.R.string.cancel, null)
                 .show()
         }
+    }
+
+    /**
+     * 蓝牙信令兜底（0.4.0）：被控机配对码页在广播本机地址，这里按厂商 ID 过滤扫，
+     * 扫到即带码直连；超时未扫到给热点后路提示。权限缺失先申请，回来续上同一码。
+     */
+    private fun startBleFallback(code: String) {
+        val missing = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            listOfNotNull(
+                android.Manifest.permission.BLUETOOTH_SCAN,
+            ).filter { ActivityCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
+        } else {
+            listOfNotNull(
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
+            ).filter { ActivityCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }
+        }
+        if (missing.isNotEmpty()) {
+            pendingBleCode = code
+            ActivityCompat.requestPermissions(this, missing.toTypedArray(), REQ_BLE_SCAN)
+            return
+        }
+        val scanner = bleScanner ?: BlePeerScanner(this).also { bleScanner = it }
+        val started = scanner.start { info -> runOnUiThread { connectToBlePeer(info, code) } }
+        if (!started) {
+            // 蓝牙不可用（未开/无硬件）：退回原提示口径，不拦用户走地址后路
+            Toast.makeText(this, R.string.pair_input_need_peer, Toast.LENGTH_LONG).show()
+            return
+        }
+        findViewById<TextView>(R.id.pair_input_status).text = getString(R.string.pair_input_ble_searching)
+        mainHandler.postDelayed({
+            if (!bleConnected) {
+                scanner.stop()
+                findViewById<TextView>(R.id.pair_input_status).text = getString(R.string.pair_input_ble_timeout)
+            }
+        }, BLE_TIMEOUT_MS)
+    }
+
+    private fun connectToBlePeer(info: BleHandshake.BeaconInfo, code: String) {
+        if (bleConnected) return
+        bleConnected = true
+        bleScanner?.stop()
+        ConnectingActivity.start(
+            this,
+            info.ip,
+            info.port,
+            code,
+            intent.getStringExtra(EXTRA_FINGERPRINT).orEmpty(),
+            intent.getStringExtra(EXTRA_NAME).orEmpty(),
+        )
     }
 
     private fun connectToPeer(peer: DiscoveryService.DiscoveredPeer, code: String) {
@@ -121,6 +197,8 @@ class PairInputActivity : AppCompatActivity() {
 
     companion object {
         private const val PAIR_CODE_LEN = 6
+        private const val REQ_BLE_SCAN = 4803
+        private const val BLE_TIMEOUT_MS = 10_000L
         const val EXTRA_HOST = "host"
         const val EXTRA_PORT = "port"
         const val EXTRA_FINGERPRINT = "fingerprint"

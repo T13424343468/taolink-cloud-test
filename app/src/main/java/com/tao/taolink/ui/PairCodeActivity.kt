@@ -2,6 +2,7 @@ package com.tao.tao.link.ui
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
@@ -9,7 +10,9 @@ import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import com.tao.tao.link.R
+import com.tao.tao.link.net.BleBeacon
 import com.tao.tao.link.protocol.DeviceFingerprint
 import com.tao.tao.link.protocol.DeviceIdentity
 import com.tao.tao.link.protocol.PairingResponder
@@ -48,6 +51,29 @@ class PairCodeActivity : AppCompatActivity() {
         refreshIpLine()
         refreshBatteryBanner()
         probeServeReady()
+        startBleBeacon()
+    }
+
+    override fun onPause() {
+        BleBeacon.stop() // 离页即停播，不留常开广播（最小功耗与最小暴露口径一致）
+        super.onPause()
+    }
+
+    /** 蓝牙信标（0.4.0 配对捎带信令）：权限齐了就随页常开广播本机地址；缺权限先申请，回来再开。 */
+    private fun startBleBeacon() {
+        val missing = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            listOfNotNull(
+                android.Manifest.permission.BLUETOOTH_ADVERTISE,
+            ).filter { ActivityCompat.checkSelfPermission(this, it) != android.content.pm.PackageManager.PERMISSION_GRANTED }
+        } else {
+            emptyList()
+        }
+        if (missing.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, missing.toTypedArray(), REQ_BLE_ADV)
+            return
+        }
+        val ip = localIpv4() ?: return
+        BleBeacon.start(this, ip, ControlledSessionService.SERVICE_PORT, responder.ownFingerprintHex())
     }
 
     /** 开热点设置页：先试热点专属面板，厂商不带时回退无线设置总页。 */
@@ -115,4 +141,8 @@ class PairCodeActivity : AppCompatActivity() {
             .flatMap { it.inetAddresses.asSequence() }
             .firstOrNull { !it.isLoopbackAddress && it is java.net.Inet4Address }
             ?.hostAddress
+
+    private companion object {
+        const val REQ_BLE_ADV = 4802
+    }
 }

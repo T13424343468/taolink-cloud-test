@@ -60,6 +60,14 @@
         android:layout_marginTop="16dp"
         android:text="@string/pair_input_connect" />
 
+    <TextView
+        android:id="@+id/pair_input_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textColor="@color/brand_text_sub"
+        android:textSize="12sp" />
+
     <Button
         android:id="@+id/btn_connect_cancel"
         style="@style/Widget.AppCompat.Button.ButtonBar.AlertDialog"

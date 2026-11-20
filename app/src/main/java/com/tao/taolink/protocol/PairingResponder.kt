@@ -14,6 +14,9 @@ class PairingResponder(
 
     private var code = PairingCode.generate()
 
+    /** 本端指纹 hex（0.4.0 蓝牙信令广播用：载荷只带前 4 字节，全量仍以配对握手为准）。 */
+    fun ownFingerprintHex(): String = ownFingerprint.hex
+
     /** 当前码签发时刻；首次取码时起算，无时钟入参前不预签发。 */
     private var codeIssuedAt = Long.MIN_VALUE
 
