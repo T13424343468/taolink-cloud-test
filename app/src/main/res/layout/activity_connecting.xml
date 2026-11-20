@@ -57,6 +57,15 @@
         android:textColor="@color/gl_ink3"
         android:textSize="14sp" />
 
+    <TextView
+        android:id="@+id/connecting_error"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:textColor="@color/brand_text"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
     <Button
         android:id="@+id/btn_connecting_cancel"
         style="@style/Widget.AppCompat.Button.ButtonBar.AlertDialog"

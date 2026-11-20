@@ -92,6 +92,7 @@ class MasterSession(
      */
     fun pairAndConnect(host: String, port: Int, pairCode: CharArray): Boolean {
         check(!running.get()) { "会话已在运行" }
+        lastPairFailure = PairFailure.NONE
         peerHost = host
         peerPort = port
         expectedFingerprint = null
@@ -100,21 +101,28 @@ class MasterSession(
         running.set(true)
         return try {
             val local = DeviceFingerprint.of(localDeviceName, localUniqueId)
-            val connected = openSocket() ?: return failPairing()
+            val connected = openSocket() ?: return failPairing(PairFailure.UNREACHABLE)
             // 握手读加超时：对端不应答按配对失败收场，不给「永久卡在连接页」留门（双机实弹 2026-11-19 定因）
             connected.soTimeout = HANDSHAKE_TIMEOUT_MS
-            val peerHello = handshakeHello(connected, local.hex) ?: return failPairing()
+            val peerHello = handshakeHello(connected, local.hex) ?: return failPairing(PairFailure.NO_ANSWER)
             // 对齐 PairingResponder 契约（被控端单测背书）：PAIR_REQUEST 载荷=「码\t设备名\t指纹hex」；
             // 码错被控端回 PAIR_REJECT，猜码不放行。配对码派生会话密钥的 TLS 补位按协议文档留后续班落位。
             val submit = "${String(pairCode)}\t$localDeviceName\t${local.hex}".toByteArray(Charsets.UTF_8)
             if (!writeDirect(connected, wireBytes(Route.CONTROL, FrameType.PAIR_REQUEST, seqCounter.incrementAndGet(), submit))) {
-                return failPairing()
+                return failPairing(PairFailure.NO_ANSWER)
             }
-            val reply = readFrame(connected) ?: return failPairing()
-            if (reply.type != FrameType.PAIR_CONFIRM) return failPairing()
-            // PAIR_CONFIRM 载荷=被控端本端指纹 hex（PairingResponder 契约），对得上才算真连上对端
+            val reply = readFrame(connected) ?: return failPairing(PairFailure.NO_ANSWER)
+            if (reply.type != FrameType.PAIR_CONFIRM) return failPairing(PairFailure.NO_ANSWER)
+            // PAIR_CONFIRM 载荷=被控端本端指纹 hex（PairingResponder 契约），对得上才算真连上对端；
+            // 被控端拒配对时载荷恒为单字节 0（PAIR_REJECT），据此分辨「码不对」与「版本/指纹不符」。
             val confirm = String(reply.payload, Charsets.UTF_8)
-            if (confirm != peerHello.fingerprintHex) return failPairing()
+            if (confirm == peerHello.fingerprintHex) {
+                // 配对成立，继续建立会话
+            } else if (reply.payload.size == 1 && reply.payload[0] == 0.toByte()) {
+                return failPairing(PairFailure.CODE_WRONG)
+            } else {
+                return failPairing(PairFailure.PROTOCOL_MISMATCH)
+            }
             expectedFingerprint = peerHello.fingerprintHex
             startThreads(connected)
             connected.soTimeout = 0 // 握手毕清超时：心跳读空闲不应被误判断线
@@ -211,12 +219,20 @@ class MasterSession(
         false
     }
 
-    private fun failPairing(): Boolean {
+    private fun failPairing(reason: PairFailure = PairFailure.NO_ANSWER): Boolean {
+        lastPairFailure = reason
         running.set(false)
         closeSocket()
         transition(SessionState.DISCONNECTED)
         return false
     }
+
+    /** 配对失败原因（0.2.8 修红：失败说人话，不再静默退出让用户猜）。 */
+    enum class PairFailure { NONE, UNREACHABLE, NO_ANSWER, CODE_WRONG, PROTOCOL_MISMATCH }
+
+    @Volatile
+    var lastPairFailure: PairFailure = PairFailure.NONE
+        private set
 
     private fun handshakeHello(socket: Socket, localFingerprintHex: String): HelloPayload? {
         val hello = JsonText.obj(

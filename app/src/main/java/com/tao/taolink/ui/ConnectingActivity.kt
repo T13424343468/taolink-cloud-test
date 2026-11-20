@@ -51,8 +51,18 @@ class ConnectingActivity : AppCompatActivity() {
                     ManageActivity.start(this, fingerprint, name)
                     finish()
                 } else {
+                    // 0.2.8 修红：失败不再静默退出（真机复验：失败像消失一样没人知道为什么）——
+                    // 留在页上说人话原因，按钮改「返回重输」，用户看得懂下一步。
                     setSteps(SessionState.DISCONNECTED)
-                    finish() // 回输码页重输（原型 s-pair-input：输错了会提示重输）
+                    val reasonText = when (session.lastPairFailure) {
+                        MasterSession.PairFailure.UNREACHABLE -> getString(R.string.connecting_fail_unreachable)
+                        MasterSession.PairFailure.NO_ANSWER -> getString(R.string.connecting_fail_no_answer)
+                        MasterSession.PairFailure.CODE_WRONG -> getString(R.string.connecting_fail_code)
+                        MasterSession.PairFailure.PROTOCOL_MISMATCH -> getString(R.string.connecting_fail_protocol)
+                        MasterSession.PairFailure.NONE -> getString(R.string.connecting_fail_no_answer)
+                    }
+                    findViewById<TextView>(R.id.connecting_error).text = reasonText
+                    findViewById<Button>(R.id.btn_connecting_cancel).setText(R.string.connecting_back_reinput)
                 }
             }
         }.start()
