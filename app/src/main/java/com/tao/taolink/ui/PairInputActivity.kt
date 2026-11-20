@@ -174,14 +174,35 @@ class PairInputActivity : AppCompatActivity() {
         if (bleConnected) return
         bleConnected = true
         bleScanner?.stop()
-        ConnectingActivity.start(
-            this,
-            info.ip,
-            info.port,
-            code,
-            intent.getStringExtra(EXTRA_FINGERPRINT).orEmpty(),
-            intent.getStringExtra(EXTRA_NAME).orEmpty(),
-        )
+        val statusView = findViewById<TextView>(R.id.pair_input_status)
+        // 先探可达再进连接（0.4.1 修红）：蓝牙只递门牌，TCP 仍要网络路——
+        // 双方都不在同一网（如都关 WiFi 走蜂窝）时门牌指不到，直接进连接页必败；
+        // 探不通就地给热点后路指引，不把用户带进注定失败的连接页。
+        Thread {
+            val reachable = try {
+                java.net.Socket().use {
+                    it.connect(java.net.InetSocketAddress(info.ip, info.port), BLE_PROBE_TIMEOUT_MS.toInt())
+                    true
+                }
+            } catch (_: Exception) {
+                false
+            }
+            runOnUiThread {
+                if (reachable) {
+                    ConnectingActivity.start(
+                        this,
+                        info.ip,
+                        info.port,
+                        code,
+                        intent.getStringExtra(EXTRA_FINGERPRINT).orEmpty(),
+                        intent.getStringExtra(EXTRA_NAME).orEmpty(),
+                    )
+                } else {
+                    bleConnected = false // 放开重试闸：连上热点后可直接再输码
+                    statusView.text = getString(R.string.pair_input_ble_unreachable)
+                }
+            }
+        }.start()
     }
 
     private fun connectToPeer(peer: DiscoveryService.DiscoveredPeer, code: String) {
@@ -199,6 +220,7 @@ class PairInputActivity : AppCompatActivity() {
         private const val PAIR_CODE_LEN = 6
         private const val REQ_BLE_SCAN = 4803
         private const val BLE_TIMEOUT_MS = 10_000L
+        private const val BLE_PROBE_TIMEOUT_MS = 2_000L
         const val EXTRA_HOST = "host"
         const val EXTRA_PORT = "port"
         const val EXTRA_FINGERPRINT = "fingerprint"

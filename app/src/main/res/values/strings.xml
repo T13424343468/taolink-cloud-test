@@ -66,6 +66,7 @@
     <string name="pair_code_hotspot_title">共用 WiFi 连了也通不了？别指望路由器了：开个热点让对方连你的热点，照样能连。</string>
     <string name="btn_hotspot_open">开热点让对方连</string>
     <string name="pair_input_ble_searching">局域网里没找到，正在用蓝牙找对方…</string>
+    <string name="pair_input_ble_unreachable">蓝牙找到对方了，但网络不通——让对方开热点，你连上热点后再输码连一次。</string>
     <string name="pair_input_ble_timeout">蓝牙也没找到——让对方开热点，你连上热点再连一次。</string>
     <string name="pair_input_hotspot_hint">搜不到/连不通时：让对方开热点，你连上那个热点，再填它大字页新显示的地址。</string>
 
