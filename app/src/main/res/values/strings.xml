@@ -3,6 +3,8 @@
     <string name="role_help">去帮忙</string>
     <string name="role_controlled">让人帮</string>
     <string name="pair_code_hint">把这个号码告诉帮你的那个人</string>
+    <string name="pair_code_ip_label">本机地址：%1$s（搜不到设备时，对方在输码页填这个）</string>
+    <string name="pair_code_ip_unset">未取到，请确认已连 WiFi</string>
     <string name="default_device_name">TaoLink 手机</string>
     <string name="resident_title">TaoLink 驻留中</string>
     <string name="resident_text">保持连接以便被帮助</string>
@@ -37,6 +39,7 @@
     <string name="pair_input_aux">看对方手机「让人帮」页面上的大字数字，输入这 6 位。</string>
     <string name="pair_input_pick_peer">附近找到多台设备，选要连的那台</string>
     <string name="pair_input_need_peer">先在「附近设备」里找到对方并点连接，再输配对码；对方需开着「让人帮」。</string>
+    <string name="pair_input_ip_hint">对方本机地址（选填，搜不到时填对方配对码页显示的地址）</string>
     <string name="pair_input_connect">连接</string>
     <string name="pair_input_cancel">取消</string>
     <string name="pair_input_aux2">输错了会提示重输，不会连错人。</string>

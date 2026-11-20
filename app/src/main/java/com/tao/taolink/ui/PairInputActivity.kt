@@ -12,10 +12,9 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.tao.tao.link.R
 import com.tao.tao.link.net.DiscoveryService
-import com.tao.tao.link.net.MasterSession
 import com.tao.tao.link.net.NsdDiscoveryController
-import com.tao.tao.link.protocol.DeviceIdentity
 import com.tao.tao.link.protocol.PairingRecord
+import com.tao.tao.link.service.ControlledSessionService
 
 /**
  * 输配对码（定稿原型 v2 s-pair-input）：6 位码提交给 MasterSession.pairAndConnect（net 层），
@@ -27,19 +26,38 @@ import com.tao.tao.link.protocol.PairingRecord
  */
 class PairInputActivity : AppCompatActivity() {
 
-    private lateinit var discovery: NsdDiscoveryController
+    private var discovery: NsdDiscoveryController? = null
     private val peers = LinkedHashMap<String, DiscoveryService.DiscoveredPeer>()
     private val mainHandler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_pair_input)
+        // 自身修红（0.2.6 真机复验暴露）：discovery 原为 lateinit，仅无预选地址时初始化——
+        // 从发现页带地址进本页，离开页面 onDestroy 解引用必崩，整条「找到设备→输码」路带雷。
+        // 改为进页必初始化（组播锁随构造持有无害），仅自扫描分支起浏览。
+        discovery = NsdDiscoveryController(this)
         val input = findViewById<EditText>(R.id.pair_code_input)
+        val ipInput = findViewById<EditText>(R.id.pair_input_ip)
         findViewById<Button>(R.id.btn_connect_cancel).setOnClickListener { finish() }
         findViewById<Button>(R.id.btn_connect_submit).setOnClickListener {
             val code = input.text?.toString().orEmpty()
             if (code.length != PAIR_CODE_LEN) {
                 Toast.makeText(this, R.string.pair_input_aux, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val manualIp = ipInput.text?.toString().orEmpty().trim()
+            if (manualIp.isNotEmpty()) {
+                // 直连后路（发现被 OEM/路由器拦时的兜底路径，§6 换）：输对方屏幕显示的本机地址直达，
+                // 端口即被控监听端口；指纹留空同发现路径口径，配对码仍校验不连错人。
+                ConnectingActivity.start(
+                    this,
+                    manualIp,
+                    ControlledSessionService.SERVICE_PORT,
+                    code,
+                    intent.getStringExtra(EXTRA_FINGERPRINT).orEmpty(),
+                    intent.getStringExtra(EXTRA_NAME).orEmpty(),
+                )
                 return@setOnClickListener
             }
             val host = intent.getStringExtra(EXTRA_HOST).orEmpty()
@@ -62,14 +80,14 @@ class PairInputActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        discovery.stopBrowsing() // 离页即停扫，无残留回调（发现取消口径一致）
+        discovery?.stopBrowsing() // 离页即停扫，无残留回调（发现取消口径一致）
         super.onDestroy()
     }
 
     /** 无预选目标：进页即扫（同发现页口径），提交那一刻以扫到的设备为准。 */
     private fun startSelfScan() {
-        discovery = NsdDiscoveryController(this)
-        discovery.startBrowsing(
+        val controller = discovery ?: return
+        controller.startBrowsing(
             onFound = { peer -> runOnUiThread { if (peer.supportsControlled) peers[peer.host] = peer } },
             onError = { /* 扫描启动失败不拦提交：提交时按 0 台口径给提示 */ },
         )

@@ -12,6 +12,8 @@ import com.tao.tao.link.protocol.PairingResponderHolder
 /**
  * 被控端配对码大字显示（需求清单 §1：配对码被控端大字显示、主控端输入，被控端全程零输入）。
  * 老人机场景字号拉满（大道至简：第一眼只见配对码这一件事）。
+ * 直连后路（0.2.6 真机复验发现被 OEM/路由器拦时）：屏幕同时显示本机地址，
+ * 对方在输码页填地址即直达，不依赖发现链路（§6 换，不换目标）。
  */
 class PairCodeActivity : AppCompatActivity() {
 
@@ -25,5 +27,15 @@ class PairCodeActivity : AppCompatActivity() {
             DeviceIdentity.ownFingerprint(filesDir, getString(R.string.default_device_name)),
         )
         findViewById<TextView>(R.id.pair_code_text).text = responder.displayCode()
+        findViewById<TextView>(R.id.pair_code_ip).text =
+            getString(R.string.pair_code_ip_label, localIpv4() ?: getString(R.string.pair_code_ip_unset))
     }
+
+    /** 取本机 IPv4：优先 WiFi，多网卡时取第一个站点内地址；拿不到显示未取到，不空指。 */
+    private fun localIpv4(): String? =
+        java.net.NetworkInterface.getNetworkInterfaces().asSequence()
+            .filter { it.isUp && !it.isLoopback }
+            .flatMap { it.inetAddresses.asSequence() }
+            .firstOrNull { !it.isLoopbackAddress && it is java.net.Inet4Address }
+            ?.hostAddress
 }

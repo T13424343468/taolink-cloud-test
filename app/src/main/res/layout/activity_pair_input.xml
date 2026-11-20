@@ -40,6 +40,19 @@
         android:textColor="@color/brand_text"
         android:textSize="28sp" />
 
+    <EditText
+        android:id="@+id/pair_input_ip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:background="@color/brand_card_soft"
+        android:gravity="center"
+        android:hint="@string/pair_input_ip_hint"
+        android:inputType="text"
+        android:padding="12dp"
+        android:textColor="@color/brand_text"
+        android:textSize="14sp" />
+
     <Button
         android:id="@+id/btn_connect_submit"
         android:layout_width="match_parent"
