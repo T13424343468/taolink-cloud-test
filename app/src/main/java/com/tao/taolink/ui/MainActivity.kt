@@ -12,6 +12,15 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // 真机审查补漏（0.2.5 验收暴露）：API 33+ 通知权限默认拒，来电轻提示与驻留通知静默丢失，
+        // 云模拟器默认授权盖不住此分支——首屏申请一次，拒绝也不拦主功能（通知仅轻提示）。
+        if (android.os.Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 4801)
+        }
+
         // 让人帮：起被控端驻留服务（配对码大字显示）——被控端垂直班落码入口
         findViewById<android.view.View>(R.id.btn_controlled).setOnClickListener {
             ControlledSessionService.start(this)

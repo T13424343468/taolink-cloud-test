@@ -9,5 +9,8 @@
         <item name="colorPrimary">@color/brand_accent</item>
         <item name="colorAccent">@color/brand_accent</item>
         <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
+        <!-- 真机加固（0.2.5 真机验收暴露险点）：部分 OEM ROM/新系统对 opt-out 不认账仍强制全屏延伸；
+             主题级 fitsSystemWindows 默认值让首个根视图垫出状态栏，opt-out 生效的窗口上无副作用，双保险不逐页改布局。 -->
+        <item name="android:fitsSystemWindows">true</item>
     </style>
 </resources>

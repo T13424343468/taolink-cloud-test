@@ -31,9 +31,15 @@ class PairInputActivity : AppCompatActivity() {
                 Toast.makeText(this, R.string.pair_input_aux, Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+            val host = intent.getStringExtra(EXTRA_HOST).orEmpty()
+            // 真机审查堵死路（0.2.5 验收教训）：无发现入口进来 host 为空，此前直接开连接必败且无提示。
+            if (host.isEmpty()) {
+                Toast.makeText(this, R.string.pair_input_need_peer, Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
             ConnectingActivity.start(
                 this,
-                intent.getStringExtra(EXTRA_HOST).orEmpty(),
+                host,
                 intent.getIntExtra(EXTRA_PORT, 0),
                 code,
                 intent.getStringExtra(EXTRA_FINGERPRINT).orEmpty(),

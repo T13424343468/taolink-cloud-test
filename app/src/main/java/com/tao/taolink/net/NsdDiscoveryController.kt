@@ -18,6 +18,22 @@ class NsdDiscoveryController(context: Context) : DiscoveryService {
     private var discoveryListener: NsdManager.DiscoveryListener? = null
     private var registrationListener: NsdManager.RegistrationListener? = null
     private val resolving = HashSet<String>()
+    private var multicastLock: android.net.wifi.WifiManager.MulticastLock? = null
+
+    init {
+        // 真机加固（0.2.5 真机验收暴露险点）：云模拟器 NSD 全绿，真机 OEM ROM 省电策略常拦 mDNS 多播收包，
+        // 口播在、发现列表永远空。持有组播锁保住收包路径（CHANGE_WIFI_MULTICAST_STATE 权限已在清单）。
+        // 锁随控制器生命周期持有，App 进程在即持有，不随页进出反复开关。
+        try {
+            val wifi = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as android.net.wifi.WifiManager
+            multicastLock = wifi.createMulticastLock("taolink-nsd").apply {
+                setReferenceCounted(false)
+                acquire()
+            }
+        } catch (e: Exception) {
+            LinkLog.w(TAG, "组播锁获取失败，发现可能受限：${e.message}")
+        }
+    }
 
     override fun startBrowsing(onFound: (DiscoveryService.DiscoveredPeer) -> Unit, onError: ((Int) -> Unit)?) {
         if (discoveryListener != null) return
@@ -138,7 +154,10 @@ class NsdDiscoveryController(context: Context) : DiscoveryService {
 
     private fun resolveHost(info: NsdServiceInfo): String? =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            info.hostAddresses.firstOrNull()?.hostAddress
+            // 真机加固（0.2.5 审查发现）：真机 mDNS 常同时解析出 IPv6（含链路本地地址），firstOrNull 拿到 v6
+            // 而对端 Socket 连链路本地无作用域 ID 必失败——优先取 IPv4，v4 缺席才退 v6（云模拟器只回 v4 盖不住此分支）。
+            info.hostAddresses.firstOrNull { !it.hostAddress.contains(':') }?.hostAddress
+                ?: info.hostAddresses.firstOrNull()?.hostAddress
         } else {
             // API 26-33 无 hostAddresses 可用；分支隔离遗留调用并留痕（构建坑册 #45 可空口径同源）。
             @Suppress("DEPRECATION")
